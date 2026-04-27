@@ -1,16 +1,18 @@
-export class Game {
-  constructor({ arena, player, renderer, previewRenderer, controls, storage, scoreEl, levelEl, highScoreEl, scoresEl, overlayEl }) {
+import { EventEmitter } from '@/event-emitter.js';
+
+// Game orchestrates the loop and game-over state.
+// Score/level/preview UI is handled externally via player events (see index.js).
+export class Game extends EventEmitter {
+  constructor({ arena, player, renderer, controls, storage, overlayEl, highScoreEl, scoresEl }) {
+    super();
     this.arena = arena;
     this.player = player;
     this.renderer = renderer;
-    this.previewRenderer = previewRenderer;
     this.controls = controls;
     this.storage = storage;
-    this.scoreEl = scoreEl;
-    this.levelEl = levelEl;
+    this.overlayEl = overlayEl;
     this.highScoreEl = highScoreEl;
     this.scoresEl = scoresEl;
-    this.overlayEl = overlayEl;
 
     this._dropCounter = 0;
     this._dropInterval = 1000;
@@ -33,13 +35,9 @@ export class Game {
     this._gameOver = false;
     this._flashing = false;
     this.arena.reset();
-    this.player.score = 0;
-    this.player.totalLines = 0;
-    this.player.nextMatrix = null;
-    const ok = this.player.reset();
+    this.player.resetStats();
     this._dropInterval = 1000;
-    this._updateHUD();
-    this._renderPreview();
+    const ok = this.player.reset();
     if (!ok) return;
     this._running = true;
     this._lastTime = 0;
@@ -135,9 +133,6 @@ export class Game {
     this._dropInterval = Math.max(100, 1000 - (this.player.level - 1) * 100);
 
     const ok = this.player.reset();
-    this._updateHUD();
-    this._renderPreview();
-
     if (!ok) {
       this._triggerGameOver();
       return;
@@ -161,11 +156,8 @@ export class Game {
       this._renderScores();
     }
 
-    if (this.scoreEl) {
-      this.scoreEl.textContent = this.player.score;
-    }
-
     this._showOverlay(isNewRecord);
+    this.emit('gameover', { score: this.player.score, isNewRecord });
   }
 
   _showOverlay(isNewRecord) {
@@ -181,12 +173,6 @@ export class Game {
     this.overlayEl?.classList.add('hidden');
   }
 
-  _renderPreview() {
-    if (this.previewRenderer && this.player.nextMatrix) {
-      this.previewRenderer.renderPreview(this.player.nextMatrix);
-    }
-  }
-
   _updateHighScore() {
     if (this.highScoreEl && this.storage) {
       this.highScoreEl.textContent = this.storage.getHighScore();
@@ -199,14 +185,5 @@ export class Game {
     this.scoresEl.innerHTML = scores
       .map((s, i) => `<li><span class="rank">${i + 1}.</span> ${s.score} <span class="date">${s.date}</span></li>`)
       .join('');
-  }
-
-  _updateHUD() {
-    if (this.scoreEl && !this._gameOver) {
-      this.scoreEl.textContent = this.player.score;
-    }
-    if (this.levelEl) {
-      this.levelEl.textContent = this.player.level;
-    }
   }
 }

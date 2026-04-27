@@ -1,7 +1,9 @@
-import { PIECES } from './pieces.js';
+import { EventEmitter } from '@/event-emitter.js';
+import { PIECES }       from '@/pieces.js';
 
-export class Player {
+export class Player extends EventEmitter {
   constructor(arena) {
+    super();
     this.arena = arena;
     this.pos = { x: 0, y: 0 };
     this.matrix = null;
@@ -14,6 +16,15 @@ export class Player {
     return Math.floor(this.totalLines / 10) + 1;
   }
 
+  // Resets score/lines and emits initial state — call before reset()
+  resetStats() {
+    this.score = 0;
+    this.totalLines = 0;
+    this.nextMatrix = null;
+    this.emit('score:changed', 0);
+    this.emit('level:changed', 1);
+  }
+
   // Returns false if spawn position collides (game over)
   reset() {
     if (!this.nextMatrix) {
@@ -21,6 +32,7 @@ export class Player {
     }
     this.matrix = this.nextMatrix;
     this.nextMatrix = this._randomPiece();
+    this.emit('piece:next', this.nextMatrix);
     this.pos.y = 0;
     this.pos.x = Math.floor(this.arena.width / 2) - Math.floor(this.matrix[0].length / 2);
     return !this.arena.collides(this.matrix, this.pos);
@@ -73,10 +85,6 @@ export class Player {
     this._addScore(lines);
   }
 
-  trigger(action) {
-    if (this._handlers?.[action]) this._handlers[action]();
-  }
-
   _randomPiece() {
     const types = Object.keys(PIECES);
     const type = types[Math.floor(Math.random() * types.length)];
@@ -84,11 +92,16 @@ export class Player {
   }
 
   _addScore(lines) {
+    const prevLevel = this.level;
     this.totalLines += lines;
     let multiplier = 1;
     for (let i = 0; i < lines; i++) {
       this.score += multiplier * 10;
       multiplier *= 2;
+    }
+    this.emit('score:changed', this.score);
+    if (this.level !== prevLevel) {
+      this.emit('level:changed', this.level);
     }
   }
 

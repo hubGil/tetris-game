@@ -1,4 +1,4 @@
-import { COLORS } from './pieces.js';
+import { COLORS } from '@/pieces.js';
 
 export class Renderer {
   constructor(canvas, cellSize = 20) {
