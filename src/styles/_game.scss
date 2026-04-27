@@ -1,0 +1,38 @@
+@use 'variables' as *;
+
+h1 {
+  letter-spacing: 4px;
+}
+
+#score {
+  font-size: $font-size-lg;
+  min-height: 1.6rem;
+}
+
+canvas {
+  border: $canvas-border;
+  display: block;
+}
+
+#restart {
+  background: $bg-surface;
+  color: $color-text;
+  border: 1px solid $color-border-light;
+  padding: $spacing-sm $spacing-lg * 1;
+  font-family: $font-mono;
+  font-size: $font-size-base;
+  cursor: pointer;
+  letter-spacing: 2px;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: $bg-hover;
+  }
+}
+
+#controls {
+  color: $color-muted;
+  font-size: $font-size-sm;
+  text-align: center;
+  line-height: 1.6;
+}
