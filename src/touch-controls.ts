@@ -8,8 +8,8 @@ type TouchOptions = {
 export class TouchControls {
   private readonly _element: HTMLElement;
   private readonly _controls: Controls;
-  private readonly _threshold: number;
-  private readonly _tapMs: number;
+  private _threshold: number;
+  private _tapMs: number;
   private _startX = 0;
   private _startY = 0;
   private _startTime = 0;
@@ -36,6 +36,11 @@ export class TouchControls {
   destroy(): void {
     this._element.removeEventListener('touchstart', this._onStart);
     this._element.removeEventListener('touchend', this._onEnd);
+  }
+
+  updateSettings({ threshold, tapMs }: TouchOptions): void {
+    if (typeof threshold === 'number') this._threshold = threshold;
+    if (typeof tapMs === 'number') this._tapMs = tapMs;
   }
 
   private _handleStart(event: TouchEvent): void {

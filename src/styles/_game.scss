@@ -1,229 +1,460 @@
-@use 'variables' as *;
+@use './variables' as *;
 
-// ── Typography ─────────────────────────────────────────────────────────────────
-h1 {
-  letter-spacing: 4px;
-  font-size: 1.4rem;
-}
-
-// ── Grid layout — desktop ──────────────────────────────────────────────────────
-//
-//   hold  │  game  │  next
-//   stats │  game  │  actions
-//   .     │  game  │  scores
-//
 .layout {
   display: grid;
-  grid-template-columns: 140px 240px 140px;
-  grid-template-areas:
-    'hold  game  next   '
-    'stats game  actions'
-    '.     game  scores ';
+  grid-template-columns: minmax(260px, 320px) minmax(280px, 1fr) minmax(
+      240px,
+      320px
+    );
   gap: $spacing-lg;
   align-items: start;
 }
 
-.ga-hold {
-  grid-area: hold;
-}
-.ga-stats {
-  grid-area: stats;
-}
-.game-area {
-  grid-area: game;
-}
-.ga-next {
-  grid-area: next;
-}
-.ga-actions {
-  grid-area: actions;
-}
-.ga-scores {
-  grid-area: scores;
-}
-
-// ── Game canvas ────────────────────────────────────────────────────────────────
-.game-area {
-  position: relative;
-
-  canvas#tetris {
-    display: block;
-    border: $canvas-border;
-    width: 240px;
-    height: 400px;
-  }
-}
-
-// ── Small canvases (hold / next) ───────────────────────────────────────────────
-canvas#hold,
-canvas#preview {
-  border: $canvas-border;
-  display: block;
-}
-
-// ── Info blocks ────────────────────────────────────────────────────────────────
-.info-block {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-
-  .label {
-    font-size: $font-size-sm;
-    color: $color-muted;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-  }
-
-  #score,
-  #highscore,
-  #level {
-    font-size: $font-size-lg;
-    min-height: 1.6rem;
-  }
-}
-
-// Stats column (score + melhor + level stacked)
-.ga-stats {
+.side-panel {
   display: flex;
   flex-direction: column;
   gap: $spacing-md;
 }
 
-// Scores list
-.ga-scores {
-  #scores {
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    font-size: $font-size-sm;
-    padding: 0;
-
-    li {
-      display: flex;
-      gap: 6px;
-      align-items: baseline;
-    }
-    .rank {
-      color: $color-muted;
-    }
-    .date {
-      color: $color-muted;
-      font-size: 0.7rem;
-    }
-  }
+.panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: $radius-md;
+  padding: $spacing-md;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(10px);
 }
 
-// ── Buttons ────────────────────────────────────────────────────────────────────
-.ga-actions {
+.panel-kicker,
+.label {
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 0.74rem;
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-sm;
+}
+
+.hero-copy h2 {
+  font-size: 1.4rem;
+  line-height: 1.15;
+  margin-bottom: $spacing-sm;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: $spacing-sm;
+}
+
+.stat-card {
+  border-radius: $radius-sm;
+  border: 1px solid var(--border);
+  padding: 0.95rem;
+  background: rgba(255, 255, 255, 0.03);
+  min-height: 90px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.stat-card strong {
+  font-family: $font-mono;
+  font-size: 1.6rem;
+  color: var(--accent-strong);
+}
+
+.game-stage {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+  align-items: center;
+}
+
+.game-frame {
+  position: relative;
+  padding: 16px;
+  border-radius: 30px;
+  border: 1px solid var(--border-strong);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.06),
+      rgba(255, 255, 255, 0.02)
+    ),
+    var(--bg-panel-strong);
+  box-shadow: var(--shadow);
+}
+
+.game-frame::before {
+  content: '';
+  position: absolute;
+  inset: 12px;
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  pointer-events: none;
+}
+
+.game-frame.is-locking {
+  animation: lock-pulse 180ms ease;
+}
+
+canvas#tetris {
+  display: block;
+  width: min(100%, 360px);
+  height: auto;
+  aspect-ratio: 3 / 5;
+  border-radius: 18px;
+  background: #000;
+  box-shadow: var(--canvas-glow);
+}
+
+canvas#hold,
+canvas#preview {
+  display: block;
+  width: min(100%, 120px);
+  height: auto;
+  aspect-ratio: 1;
+  border-radius: 16px;
+  background: #000;
+  box-shadow: var(--canvas-glow);
+}
+
+.level-splash,
+.combo-counter {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%) translateY(-6px);
+  z-index: 5;
+  padding: 0.55rem 1rem;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  background: rgba(4, 10, 21, 0.88);
+  backdrop-filter: blur(10px);
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.level-splash {
+  top: 18px;
+  color: var(--warning);
+}
+
+.combo-counter {
+  bottom: 18px;
+  color: var(--accent);
+}
+
+.level-splash.is-visible,
+.combo-counter.is-visible {
+  animation: badge-pop 900ms ease forwards;
+}
+
+.controls-list,
+.scores-list {
+  list-style: none;
+  display: grid;
+  gap: $spacing-xs;
+}
+
+.controls-list li,
+.scores-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: $spacing-sm;
+  color: var(--text-soft);
+  font-size: 0.94rem;
+}
+
+.controls-list strong,
+.scores-list .rank {
+  font-family: $font-mono;
+  color: var(--text-main);
+}
+
+.scores-list li {
+  align-items: baseline;
+}
+
+.scores-list .date {
+  color: var(--text-dim);
+  font-size: 0.78rem;
+}
+
+.session-panel {
+  display: grid;
+  gap: $spacing-sm;
+}
+
+.session-panel strong {
+  display: block;
+  margin-top: 0.3rem;
+  font-size: 1.2rem;
+  text-transform: uppercase;
+}
+
+.quick-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: $spacing-sm;
+}
+
+.mode-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: $spacing-md;
+  margin-top: $spacing-lg;
+}
+
+.mode-card {
+  border-radius: $radius-md;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+  padding: $spacing-md;
   display: flex;
   flex-direction: column;
   gap: $spacing-sm;
-
-  button {
-    background: $bg-surface;
-    color: $color-text;
-    border: 1px solid $color-border-light;
-    padding: $spacing-sm;
-    font-family: $font-mono;
-    font-size: $font-size-sm;
-    cursor: pointer;
-    letter-spacing: 2px;
-    transition: background 0.15s ease;
-    width: 100%;
-
-    &:hover {
-      background: $bg-hover;
-    }
-  }
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    background 160ms ease;
 }
 
-kbd {
-  font-size: 0.65rem;
-  color: $color-muted;
-  border: 1px solid $color-border;
-  padding: 1px 4px;
-  border-radius: 3px;
+.mode-card.active {
+  border-color: var(--border-strong);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  transform: translateY(-2px);
+}
+
+.mode-name {
+  font-size: 1.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.mode-copy {
+  color: var(--text-soft);
+  line-height: 1.6;
+  flex: 1;
+}
+
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: $spacing-md;
+}
+
+.settings-section {
+  border-radius: $radius-md;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+  padding: $spacing-md;
+  display: grid;
+  gap: $spacing-sm;
+}
+
+.settings-section h3 {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.settings-section--wide {
+  grid-column: 1 / -1;
+}
+
+.field {
+  display: grid;
+  gap: $spacing-xs;
+}
+
+.field span {
+  color: var(--text-soft);
+}
+
+.field input,
+.field select {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: rgba(5, 12, 24, 0.76);
+  color: var(--text-main);
+  padding: 0.75rem 0.9rem;
+}
+
+.bindings-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: $spacing-sm;
+}
+
+.bindings-grid button {
+  border-radius: 18px;
+  min-height: 76px;
+  text-align: left;
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.9rem 1rem;
+}
+
+.bindings-grid button span {
+  color: var(--accent-strong);
   font-family: $font-mono;
 }
 
-// ── Controls hint ──────────────────────────────────────────────────────────────
-#controls {
-  color: $color-muted;
-  font-size: $font-size-sm;
-  text-align: center;
-  line-height: 1.8;
-  margin-top: $spacing-sm;
+.bindings-grid button.is-listening {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent);
 }
 
-// ── Mobile layout ──────────────────────────────────────────────────────────────
-//
-//   stats  stats
-//   game   game
-//   hold   next
-//   actions actions
-//   (scores hidden)
-//
-@media (max-width: $breakpoint-mobile) {
-  h1 {
-    font-size: 1.1rem;
-  }
+.touch-dock {
+  width: min(100%, 440px);
+  display: none;
+  gap: $spacing-sm;
+}
 
+.touch-pad {
+  display: grid;
+  gap: $spacing-sm;
+}
+
+.touch-pad--move {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.touch-pad--actions {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.touch-dock button {
+  min-height: 56px;
+  border-radius: 20px;
+  font-size: 0.95rem;
+  font-family: $font-mono;
+}
+
+@keyframes badge-pop {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px) scale(0.94);
+  }
+  16% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-6px) scale(1.03);
+  }
+}
+
+@keyframes lock-pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(0.985);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@media (max-width: $breakpoint-tablet) {
   .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .ga-left,
+  .ga-right {
+    order: 2;
+  }
+
+  .ga-center {
+    order: 1;
+  }
+
+  .mode-grid,
+  .settings-grid,
+  .bindings-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .quick-actions {
     grid-template-columns: 1fr 1fr;
-    grid-template-areas:
-      'stats   stats  '
-      'game    game   '
-      'hold    next   '
-      'actions actions';
-    gap: $spacing-md;
-    width: min(320px, 100%);
-    margin: 0 auto;
+  }
+}
+
+@media (max-width: $breakpoint-mobile) {
+  .layout {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  // Scores hidden on mobile to save space
-  .ga-scores {
-    display: none;
+  .ga-center {
+    order: 1;
+    grid-column: 1 / -1;
   }
 
-  // Game canvas scales to fill 2-column span
-  .game-area {
-    justify-self: center;
-
-    canvas#tetris {
-      width: min(240px, calc(100vw - #{$spacing-lg * 2}));
-      height: auto;
-      aspect-ratio: 3 / 5;
-    }
+  .ga-left,
+  .ga-right {
+    display: contents;
   }
 
-  // Stats as horizontal row above the game
-  .ga-stats {
-    flex-direction: row;
-    justify-content: space-around;
-    text-align: center;
+  .hold-panel {
+    order: 2;
   }
 
-  // Hold and next centered in their cells
-  .ga-hold,
-  .ga-next {
-    align-items: center;
-    text-align: center;
+  .next-panel {
+    order: 3;
   }
 
-  // Small canvases scale with their cell
-  canvas#hold,
-  canvas#preview {
-    width: min(120px, 90%);
-    height: auto;
-    aspect-ratio: 1 / 1;
+  .stats-panel {
+    order: 4;
+    grid-column: 1 / -1;
   }
 
-  // Actions as horizontal row
-  .ga-actions {
-    flex-direction: row;
-    button {
-      flex: 1;
-    }
+  .session-panel-card {
+    order: 5;
+    grid-column: 1 / -1;
+  }
+
+  .scores-panel {
+    order: 6;
+    grid-column: 1 / -1;
+  }
+
+  .controls-panel {
+    order: 7;
+    grid-column: 1 / -1;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .game-frame {
+    padding: 12px;
+    width: 100%;
+  }
+
+  .touch-dock {
+    display: grid;
+  }
+
+  .touch-pad--actions {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .touch-pad--actions button:last-child,
+  .touch-pad--actions button:nth-last-child(2) {
+    grid-column: span 1;
   }
 }

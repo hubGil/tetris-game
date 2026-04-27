@@ -3,7 +3,7 @@ import type { ControlAction } from '@/types.js';
 type ControlHandler = (event?: KeyboardEvent) => void;
 
 export class Controls {
-  private readonly _bindings: Partial<Record<string, ControlAction>>;
+  private _bindings: Partial<Record<string, ControlAction>>;
   private _handlers: Partial<Record<ControlAction, ControlHandler>> = {};
   private readonly _listener: (event: KeyboardEvent) => void;
 
@@ -26,6 +26,15 @@ export class Controls {
   trigger(action: ControlAction): this {
     this._handlers[action]?.();
     return this;
+  }
+
+  setBindings(bindings: Partial<Record<string, ControlAction>>): this {
+    this._bindings = { ...bindings };
+    return this;
+  }
+
+  getBindings(): Partial<Record<string, ControlAction>> {
+    return { ...this._bindings };
   }
 
   destroy(): void {

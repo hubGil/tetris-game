@@ -1,12 +1,205 @@
-@use 'variables' as *;
+@use './variables' as *;
 
 body {
-  background: $bg-primary;
-  color: $color-text;
-  font-family: $font-mono;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top, rgba(85, 243, 255, 0.12), transparent 28%),
+    linear-gradient(160deg, var(--bg-page), var(--bg-page-alt));
+  color: var(--text-main);
+  font-family: $font-display;
+  padding: $spacing-lg;
+  position: relative;
+  overflow-x: hidden;
+}
+
+body::before,
+body::after {
+  content: '';
+  position: fixed;
+  inset: auto;
+  width: 42vw;
+  height: 42vw;
+  border-radius: 999px;
+  filter: blur(50px);
+  pointer-events: none;
+  z-index: -1;
+}
+
+body::before {
+  top: -10vw;
+  right: -8vw;
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
+body::after {
+  bottom: -14vw;
+  left: -10vw;
+  background: color-mix(in srgb, var(--accent-strong) 16%, transparent);
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button {
+  border: 1px solid var(--border);
+  background: var(--bg-button);
+  color: var(--text-main);
+  border-radius: 999px;
+  padding: 0.8rem 1rem;
+  cursor: pointer;
+  transition:
+    transform 140ms ease,
+    background 140ms ease,
+    border-color 140ms ease,
+    box-shadow 140ms ease;
+}
+
+button:hover {
+  background: var(--bg-button-hover);
+  border-color: var(--border-strong);
+  transform: translateY(-1px);
+}
+
+button:active {
+  transform: translateY(0);
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.app-shell {
+  width: min(1280px, 100%);
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  padding: $spacing-lg;
+  gap: $spacing-lg;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
   gap: $spacing-md;
+}
+
+.topbar h1 {
+  font-size: clamp(2rem, 5vw, 3.7rem);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.eyebrow {
+  color: var(--text-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.26em;
+  font-size: 0.76rem;
+  margin-bottom: $spacing-xs;
+}
+
+.mode-badge,
+.key-chip,
+kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-soft);
+  font-family: $font-mono;
+  font-size: 0.82rem;
+  padding: 0.3rem 0.7rem;
+}
+
+.ghost-button {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.hidden {
+  display: none !important;
+}
+
+.screen-layer {
+  position: fixed;
+  inset: 0;
+  padding: $spacing-lg;
+  background: rgba(2, 7, 14, 0.7);
+  backdrop-filter: blur(20px);
+  display: grid;
+  place-items: center;
+  z-index: 40;
+}
+
+.screen-card {
+  width: min(1080px, 100%);
+  background: var(--bg-panel-strong);
+  border: 1px solid var(--border-strong);
+  border-radius: $radius-lg;
+  box-shadow: var(--shadow);
+  padding: clamp(1.4rem, 4vw, 2.4rem);
+}
+
+.screen-card h2 {
+  font-size: clamp(1.7rem, 3vw, 2.7rem);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: $spacing-sm;
+}
+
+.screen-copy,
+.panel-text {
+  color: var(--text-soft);
+  line-height: 1.6;
+}
+
+.screen-actions {
+  margin-top: $spacing-lg;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.settings-header {
+  display: flex;
+  justify-content: space-between;
+  gap: $spacing-md;
+  align-items: flex-start;
+  margin-bottom: $spacing-lg;
+}
+
+@media (max-width: $breakpoint-mobile) {
+  body {
+    padding: $spacing-md;
+  }
+
+  .topbar {
+    flex-direction: column;
+  }
+
+  .topbar-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .screen-layer {
+    padding: $spacing-md;
+  }
+
+  .screen-card {
+    border-radius: $radius-md;
+  }
 }

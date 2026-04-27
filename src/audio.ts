@@ -1,10 +1,17 @@
 export class AudioManager {
   private _ctx: AudioContext | null = null;
   muted = false;
+  volume = 0.7;
 
   toggle(): boolean {
     this.muted = !this.muted;
     return this.muted;
+  }
+
+  setVolume(volume: number): void {
+    this.volume = Math.max(0, Math.min(volume, 1));
+    if (this.volume === 0) this.muted = true;
+    if (this.volume > 0 && this.muted) this.muted = false;
   }
 
   playMove(): void {
@@ -53,7 +60,7 @@ export class AudioManager {
     type: OscillatorType,
     gainValue: number,
   ): void {
-    if (this.muted) return;
+    if (this.muted || this.volume === 0) return;
 
     try {
       const ctx = this._getCtx();
@@ -63,7 +70,7 @@ export class AudioManager {
       gain.connect(ctx.destination);
       oscillator.type = type;
       oscillator.frequency.value = frequency;
-      gain.gain.setValueAtTime(gainValue, ctx.currentTime);
+      gain.gain.setValueAtTime(gainValue * this.volume, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
       oscillator.start(ctx.currentTime);
       oscillator.stop(ctx.currentTime + duration + 0.01);
@@ -71,7 +78,7 @@ export class AudioManager {
   }
 
   private _noise(duration: number, gainValue: number): void {
-    if (this.muted) return;
+    if (this.muted || this.volume === 0) return;
 
     try {
       const ctx = this._getCtx();
@@ -88,7 +95,7 @@ export class AudioManager {
       const gain = ctx.createGain();
       source.connect(gain);
       gain.connect(ctx.destination);
-      gain.gain.setValueAtTime(gainValue, ctx.currentTime);
+      gain.gain.setValueAtTime(gainValue * this.volume, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
       source.start(ctx.currentTime);
     } catch {}

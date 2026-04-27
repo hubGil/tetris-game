@@ -1,23 +1,58 @@
-$bg-primary: #1a1a2e;
-$bg-surface: #333;
-$bg-hover: #444;
+:root {
+  --bg-page: #07111f;
+  --bg-page-alt: #0d1d33;
+  --bg-panel: rgba(12, 22, 39, 0.82);
+  --bg-panel-strong: rgba(5, 12, 24, 0.94);
+  --bg-button: rgba(84, 243, 255, 0.14);
+  --bg-button-hover: rgba(84, 243, 255, 0.24);
+  --text-main: #f5fbff;
+  --text-soft: #8ea4c3;
+  --text-dim: #62708f;
+  --accent: #55f3ff;
+  --accent-strong: #8dffb3;
+  --warning: #ffd15c;
+  --danger: #ff6d88;
+  --border: rgba(95, 212, 255, 0.18);
+  --border-strong: rgba(95, 212, 255, 0.42);
+  --shadow: 0 24px 80px rgba(0, 0, 0, 0.34);
+  --canvas-glow:
+    0 0 0 1px rgba(95, 212, 255, 0.16), 0 0 30px rgba(85, 243, 255, 0.12);
+}
 
-$color-text: #eee;
-$color-muted: #888;
-$color-border: #444;
-$color-border-light: #555;
+:root[data-theme='sunset'] {
+  --bg-page: #26111f;
+  --bg-page-alt: #4a1d27;
+  --bg-panel: rgba(49, 17, 31, 0.82);
+  --bg-panel-strong: rgba(35, 10, 20, 0.94);
+  --bg-button: rgba(255, 123, 84, 0.16);
+  --bg-button-hover: rgba(255, 123, 84, 0.28);
+  --text-main: #fff8f2;
+  --text-soft: #f0c2a6;
+  --text-dim: #b48978;
+  --accent: #ff7b54;
+  --accent-strong: #ffd166;
+  --warning: #fff0a1;
+  --danger: #ff5e7b;
+  --border: rgba(255, 123, 84, 0.2);
+  --border-strong: rgba(255, 123, 84, 0.42);
+  --shadow: 0 24px 80px rgba(31, 8, 15, 0.44);
+  --canvas-glow:
+    0 0 0 1px rgba(255, 123, 84, 0.18), 0 0 34px rgba(255, 123, 84, 0.16);
+}
 
-$canvas-border: 2px solid $color-border;
+$font-display: 'Bahnschrift', 'Segoe UI', sans-serif;
+$font-mono: 'Consolas', 'Courier New', monospace;
 
-$font-mono: monospace;
-$font-size-base: 1rem;
-$font-size-sm: 0.8rem;
-$font-size-lg: 1.4rem;
-
-$spacing-sm: 8px;
-$spacing-md: 12px;
+$spacing-xs: 6px;
+$spacing-sm: 10px;
+$spacing-md: 16px;
 $spacing-lg: 24px;
+$spacing-xl: 40px;
 
-$z-overlay: 10;
+$radius-sm: 12px;
+$radius-md: 20px;
+$radius-lg: 32px;
 
-$breakpoint-mobile: 520px;
+$z-overlay: 20;
+$breakpoint-tablet: 960px;
+$breakpoint-mobile: 720px;

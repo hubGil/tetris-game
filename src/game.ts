@@ -1,10 +1,11 @@
 import { EventEmitter } from '@/event-emitter.js';
+import { GAME_MODES } from '@/game-modes.js';
 import type { Arena } from '@/arena.js';
 import type { Controls } from '@/controls.js';
 import type { Player } from '@/player.js';
 import type { Renderer } from '@/renderer.js';
 import type { Storage } from '@/storage.js';
-import type { GameEvents, GameState } from '@/types.js';
+import type { GameEvents, GameMode, GameState } from '@/types.js';
 
 type GameConfig = {
   arena: Arena;
@@ -17,8 +18,6 @@ type GameConfig = {
   scoresEl: HTMLElement | null;
 };
 
-const DROP_INTERVAL_START = 1000;
-const DROP_INTERVAL_MIN = 100;
 const DROP_INTERVAL_STEP = 100;
 const FLASH_DURATION_MS = 400;
 
@@ -33,13 +32,14 @@ export class Game extends EventEmitter<GameEvents> {
   readonly scoresEl: HTMLElement | null;
 
   private _dropCounter = 0;
-  private _dropInterval = DROP_INTERVAL_START;
+  private _dropInterval = GAME_MODES.marathon.startDropInterval;
   private _lastTime = 0;
   private _frameRequest: number | null = null;
   private _flashRequest: number | null = null;
   private _state: GameState = 'idle';
   private _flashRows: number[] = [];
   private _flashStart = 0;
+  private _mode: GameMode = 'marathon';
 
   constructor({
     arena,
@@ -70,12 +70,17 @@ export class Game extends EventEmitter<GameEvents> {
     return this._state;
   }
 
-  start(): void {
+  get mode(): GameMode {
+    return this._mode;
+  }
+
+  start(mode: GameMode = this._mode): void {
     this._cancelFrames();
+    this._setMode(mode);
     this._hideOverlay();
     this.arena.reset();
     this.player.resetStats();
-    this._dropInterval = DROP_INTERVAL_START;
+    this._dropInterval = this._getDropInterval();
     this._dropCounter = 0;
     this._lastTime = 0;
     this._flashRows = [];
@@ -196,10 +201,16 @@ export class Game extends EventEmitter<GameEvents> {
 
   private _finalizeLock(pendingRows: number[]): void {
     this.player.commitClear(pendingRows);
-    this._dropInterval = Math.max(
-      DROP_INTERVAL_MIN,
-      DROP_INTERVAL_START - (this.player.level - 1) * DROP_INTERVAL_STEP,
-    );
+    this._dropInterval = this._getDropInterval();
+
+    const targetLines = GAME_MODES[this._mode].targetLines;
+    if (targetLines && this.player.totalLines >= targetLines) {
+      this._triggerGameOver(
+        'SPRINT COMPLETO',
+        `40 linhas em ${this.player.score} pontos`,
+      );
+      return;
+    }
 
     const ok = this.player.reset();
     if (!ok) {
@@ -214,7 +225,7 @@ export class Game extends EventEmitter<GameEvents> {
     this._scheduleMainLoop();
   }
 
-  private _triggerGameOver(): void {
+  private _triggerGameOver(title = 'FIM DE JOGO', subtitle = ''): void {
     this._cancelFrames();
     this._setState('gameover');
 
@@ -225,17 +236,35 @@ export class Game extends EventEmitter<GameEvents> {
       this._renderScores();
     }
 
-    this._showOverlay(isNewRecord);
-    this.emit('gameover', { score: this.player.score, isNewRecord });
+    this._showOverlay(isNewRecord, title, subtitle);
+    this.emit('gameover', {
+      score: this.player.score,
+      isNewRecord,
+      title,
+      subtitle,
+      mode: this._mode,
+    });
   }
 
-  private _showOverlay(isNewRecord: boolean): void {
+  private _showOverlay(
+    isNewRecord: boolean,
+    title: string,
+    subtitle: string,
+  ): void {
     if (!this.overlayEl) return;
 
+    const titleEl = this.overlayEl.querySelector<HTMLElement>(
+      '[data-overlay-title]',
+    );
+    const subtitleEl = this.overlayEl.querySelector<HTMLElement>(
+      '[data-overlay-subtitle]',
+    );
     const finalScoreEl =
       this.overlayEl.querySelector<HTMLElement>('[data-final-score]');
     const recordMsgEl =
       this.overlayEl.querySelector<HTMLElement>('[data-record-msg]');
+    if (titleEl) titleEl.textContent = title;
+    if (subtitleEl) subtitleEl.textContent = subtitle;
     if (finalScoreEl) finalScoreEl.textContent = String(this.player.score);
     if (recordMsgEl)
       recordMsgEl.textContent = isNewRecord ? 'NOVO RECORDE!' : '';
@@ -277,6 +306,20 @@ export class Game extends EventEmitter<GameEvents> {
     if (this._state === state) return;
     this._state = state;
     this.emit('state:changed', state);
+  }
+
+  private _setMode(mode: GameMode): void {
+    if (this._mode === mode) return;
+    this._mode = mode;
+    this.emit('mode:changed', mode);
+  }
+
+  private _getDropInterval(): number {
+    const config = GAME_MODES[this._mode];
+    return Math.max(
+      config.minDropInterval,
+      config.startDropInterval - (this.player.level - 1) * DROP_INTERVAL_STEP,
+    );
   }
 
   private _scheduleMainLoop(): void {

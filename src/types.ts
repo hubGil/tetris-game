@@ -19,15 +19,28 @@ export type ControlAction =
   | 'mute';
 
 export type GameState = 'idle' | 'running' | 'paused' | 'flashing' | 'gameover';
+export type GameMode = 'marathon' | 'sprint' | 'zen';
+export type AppTheme = 'neon' | 'sunset';
 
 export type ScoreEntry = {
   score: number;
   date: string;
 };
 
+export type ActionBindings = Record<ControlAction, string>;
+
+export type AppSettings = {
+  volume: number;
+  touchThreshold: number;
+  tapMs: number;
+  theme: AppTheme;
+  bindings: ActionBindings;
+};
+
 export type PlayerEvents = {
   'score:changed': [score: number];
   'level:changed': [level: number];
+  'combo:changed': [combo: number];
   'piece:next': [matrix: Matrix];
   'piece:hold': [matrix: Matrix | null];
   'piece:moved': [];
@@ -37,6 +50,15 @@ export type PlayerEvents = {
 };
 
 export type GameEvents = {
-  gameover: [{ score: number; isNewRecord: boolean }];
+  gameover: [
+    {
+      score: number;
+      isNewRecord: boolean;
+      title?: string;
+      subtitle?: string;
+      mode: GameMode;
+    },
+  ];
   'state:changed': [state: GameState];
+  'mode:changed': [mode: GameMode];
 };

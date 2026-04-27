@@ -62,6 +62,13 @@ describe('Player', () => {
       player.resetStats();
       expect(handler).toHaveBeenCalledWith(null);
     });
+
+    it('emits combo:changed with 0', () => {
+      const handler = vi.fn();
+      player.on('combo:changed', handler);
+      player.resetStats();
+      expect(handler).toHaveBeenCalledWith(0);
+    });
   });
 
   describe('reset', () => {
@@ -312,6 +319,24 @@ describe('Player', () => {
       player.on('level:changed', handler);
       player.commitClear([19]);
       expect(handler).not.toHaveBeenCalled();
+    });
+
+    it('increments combo when clears happen consecutively', () => {
+      const handler = vi.fn();
+      player.on('combo:changed', handler);
+      player.commitClear([19]);
+      player.commitClear([18]);
+      expect(player.combo).toBe(2);
+      expect(handler).toHaveBeenLastCalledWith(2);
+    });
+
+    it('resets combo when a lock clears no rows', () => {
+      player.commitClear([19]);
+      const handler = vi.fn();
+      player.on('combo:changed', handler);
+      player.commitClear([]);
+      expect(player.combo).toBe(0);
+      expect(handler).toHaveBeenCalledWith(0);
     });
   });
 

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -19,64 +19,233 @@
     <link rel="stylesheet" href="./src/styles/main.scss" />
   </head>
   <body>
-    <h1>TETRIS Do Nicolas</h1>
-
-    <div class="layout">
-      <div class="ga-hold info-block">
-        <span class="label">HOLD <kbd>C</kbd></span>
-        <canvas id="hold" width="120" height="120"></canvas>
-      </div>
-
-      <div class="ga-stats">
-        <div class="info-block">
-          <span class="label">SCORE</span>
-          <div id="score">0</div>
+    <div class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">estudo de frontend + gameplay</p>
+          <h1>Tetris Lab</h1>
         </div>
-        <div class="info-block">
-          <span class="label">MELHOR</span>
-          <div id="highscore">0</div>
+        <div class="topbar-actions">
+          <span id="mode-badge" class="mode-badge">marathon</span>
+          <button id="open-settings" class="ghost-button" type="button">
+            settings
+          </button>
+          <button id="mute" class="ghost-button" type="button">mute</button>
         </div>
-        <div class="info-block">
-          <span class="label">LEVEL</span>
-          <div id="level">1</div>
-        </div>
-      </div>
+      </header>
 
-      <div class="game-area">
-        <canvas id="tetris" width="240" height="400"></canvas>
-        <div id="game-over" class="overlay hidden">
-          <div class="overlay-content">
-            <h2>FIM DE JOGO</h2>
-            <p class="record-msg" data-record-msg></p>
-            <p class="final-score">
-              Score: <strong data-final-score>0</strong>
-            </p>
-            <button id="play-again">JOGAR NOVAMENTE</button>
+      <main class="layout">
+        <aside class="side-panel ga-left">
+          <section class="panel info-block hold-panel">
+            <div class="panel-head">
+              <span class="label">hold</span>
+              <span class="key-chip" data-key-for="hold">C</span>
+            </div>
+            <canvas id="hold" width="120" height="120"></canvas>
+          </section>
+
+          <section class="panel stats-grid stats-panel">
+            <div class="stat-card">
+              <span class="label">score</span>
+              <strong id="score">0</strong>
+            </div>
+            <div class="stat-card">
+              <span class="label">melhor</span>
+              <strong id="highscore">0</strong>
+            </div>
+            <div class="stat-card">
+              <span class="label">level</span>
+              <strong id="level">1</strong>
+            </div>
+            <div class="stat-card">
+              <span class="label">combo</span>
+              <strong id="combo-value">x0</strong>
+            </div>
+          </section>
+        </aside>
+
+        <section class="game-stage ga-center">
+          <div class="game-frame" id="game-frame">
+            <div id="level-splash" class="level-splash hidden"></div>
+            <div id="combo-counter" class="combo-counter hidden"></div>
+            <canvas id="tetris" width="240" height="400"></canvas>
+
+            <div id="game-over" class="overlay hidden">
+              <div class="overlay-content">
+                <p class="overlay-kicker">sessao encerrada</p>
+                <h2 data-overlay-title>FIM DE JOGO</h2>
+                <p class="overlay-subtitle" data-overlay-subtitle></p>
+                <p class="record-msg" data-record-msg></p>
+                <p class="final-score">
+                  score: <strong data-final-score>0</strong>
+                </p>
+                <div class="overlay-actions">
+                  <button id="play-again" type="button">jogar de novo</button>
+                  <button id="back-to-menu" type="button">menu</button>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
 
-      <div class="ga-next info-block">
-        <span class="label">NEXT</span>
-        <canvas id="preview" width="120" height="120"></canvas>
-      </div>
+          <div id="touch-dock" class="touch-dock" aria-label="Controles touch">
+            <div class="touch-pad touch-pad--move">
+              <button data-touch-action="moveLeft" type="button">◀</button>
+              <button data-touch-action="drop" type="button">▼</button>
+              <button data-touch-action="moveRight" type="button">▶</button>
+            </div>
+            <div class="touch-pad touch-pad--actions">
+              <button data-touch-action="rotateLeft" type="button">⟲</button>
+              <button data-touch-action="rotateRight" type="button">⟳</button>
+              <button data-touch-action="hardDrop" type="button">DROP</button>
+              <button data-touch-action="hold" type="button">HOLD</button>
+              <button data-touch-action="pause" type="button">PAUSE</button>
+            </div>
+          </div>
+        </section>
 
-      <div class="ga-actions">
-        <button id="restart">RESTART</button>
-        <button id="mute">MUTE</button>
-      </div>
+        <aside class="side-panel ga-right">
+          <section class="panel info-block next-panel">
+            <div class="panel-head">
+              <span class="label">next</span>
+            </div>
+            <canvas id="preview" width="120" height="120"></canvas>
+          </section>
 
-      <div class="ga-scores info-block">
-        <span class="label">ULTIMOS</span>
-        <ol id="scores"></ol>
-      </div>
+          <section class="panel session-panel session-panel-card">
+            <div>
+              <span class="label">modo</span>
+              <strong id="mode-title">marathon</strong>
+            </div>
+            <p id="mode-description" class="panel-text">
+              ritmo classico com velocidade crescente.
+            </p>
+            <div class="quick-actions">
+              <button id="restart" type="button">restart</button>
+              <button id="open-menu" type="button">menu</button>
+            </div>
+          </section>
+
+          <section class="panel info-block scores-panel">
+            <div class="panel-head">
+              <span class="label">ultimos scores</span>
+            </div>
+            <ol id="scores" class="scores-list"></ol>
+          </section>
+
+          <section class="panel info-block controls-panel">
+            <div class="panel-head">
+              <span class="label">controles</span>
+            </div>
+            <ul id="controls-list" class="controls-list"></ul>
+          </section>
+        </aside>
+      </main>
     </div>
 
-    <p id="controls">
-      Left/Right mover &nbsp;|&nbsp; Down drop &nbsp;|&nbsp; Space hard drop
-      &nbsp;|&nbsp; Q/W rotacionar &nbsp;|&nbsp; C hold &nbsp;|&nbsp; P pausa
-      &nbsp;|&nbsp; M mute
-    </p>
+    <section id="menu-screen" class="screen-layer">
+      <div class="screen-card">
+        <p class="eyebrow">escolha um fluxo</p>
+        <h2>Selecione um modo de jogo</h2>
+        <p class="screen-copy">
+          Cada modo muda o ritmo. Use a tela de settings para mexer em volume,
+          teclas, touch e tema antes de comecar.
+        </p>
+
+        <div class="mode-grid">
+          <article class="mode-card active" data-mode-card="marathon">
+            <p class="mode-name">marathon</p>
+            <p class="mode-copy">progressao classica, speed up a cada level.</p>
+            <button data-start-mode="marathon" type="button">
+              jogar marathon
+            </button>
+          </article>
+
+          <article class="mode-card" data-mode-card="sprint">
+            <p class="mode-name">sprint</p>
+            <p class="mode-copy">limpe 40 linhas o mais rapido possivel.</p>
+            <button data-start-mode="sprint" type="button">jogar sprint</button>
+          </article>
+
+          <article class="mode-card" data-mode-card="zen">
+            <p class="mode-name">zen</p>
+            <p class="mode-copy">queda mais lenta para testar stack e touch.</p>
+            <button data-start-mode="zen" type="button">jogar zen</button>
+          </article>
+        </div>
+
+        <div class="screen-actions">
+          <button id="menu-settings" type="button">abrir settings</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="settings-panel" class="screen-layer hidden">
+      <div class="screen-card screen-card--settings">
+        <div class="settings-header">
+          <div>
+            <p class="eyebrow">controle fino</p>
+            <h2>Settings</h2>
+          </div>
+          <button id="close-settings" class="ghost-button" type="button">
+            fechar
+          </button>
+        </div>
+
+        <div class="settings-grid">
+          <section class="settings-section">
+            <h3>Audio e tema</h3>
+            <label class="field">
+              <span>volume</span>
+              <input id="volume" type="range" min="0" max="100" value="70" />
+            </label>
+            <label class="field">
+              <span>tema</span>
+              <select id="theme">
+                <option value="neon">neon arcade</option>
+                <option value="sunset">sunset grid</option>
+              </select>
+            </label>
+          </section>
+
+          <section class="settings-section">
+            <h3>Touch</h3>
+            <label class="field">
+              <span>sensibilidade do swipe</span>
+              <input
+                id="touch-threshold"
+                type="range"
+                min="10"
+                max="120"
+                value="30"
+              />
+            </label>
+            <label class="field">
+              <span>janela do tap</span>
+              <input id="tap-ms" type="range" min="80" max="400" value="200" />
+            </label>
+          </section>
+
+          <section class="settings-section settings-section--wide">
+            <h3>Teclas</h3>
+            <p class="panel-text">
+              Clique em uma acao e pressione a nova tecla. <kbd>Escape</kbd>
+              cancela.
+            </p>
+            <div id="bindings-grid" class="bindings-grid">
+              <button data-bind-action="moveLeft" type="button"></button>
+              <button data-bind-action="moveRight" type="button"></button>
+              <button data-bind-action="drop" type="button"></button>
+              <button data-bind-action="hardDrop" type="button"></button>
+              <button data-bind-action="rotateLeft" type="button"></button>
+              <button data-bind-action="rotateRight" type="button"></button>
+              <button data-bind-action="hold" type="button"></button>
+              <button data-bind-action="pause" type="button"></button>
+              <button data-bind-action="mute" type="button"></button>
+            </div>
+          </section>
+        </div>
+      </div>
+    </section>
 
     <script type="module" src="./src/index.ts"></script>
   </body>

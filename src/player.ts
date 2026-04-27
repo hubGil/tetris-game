@@ -14,6 +14,7 @@ export class Player extends EventEmitter<PlayerEvents> {
   holdMatrix: Matrix | null = null;
   score = 0;
   totalLines = 0;
+  combo = 0;
   canHold = true;
 
   _bag: PieceBag;
@@ -35,6 +36,7 @@ export class Player extends EventEmitter<PlayerEvents> {
   resetStats(): void {
     this.score = 0;
     this.totalLines = 0;
+    this.combo = 0;
     this.holdMatrix = null;
     this.canHold = true;
     this._bag = new PieceBag(Object.keys(PIECES) as PieceType[]);
@@ -44,6 +46,7 @@ export class Player extends EventEmitter<PlayerEvents> {
     this._lastClearTetris = false;
     this.emit('score:changed', 0);
     this.emit('level:changed', 1);
+    this.emit('combo:changed', 0);
     this.emit('piece:hold', null);
   }
 
@@ -159,10 +162,18 @@ export class Player extends EventEmitter<PlayerEvents> {
   }
 
   private _addScore(lines: number): void {
-    if (lines === 0) return;
+    if (lines === 0) {
+      this._lastClearTetris = false;
+      if (this.combo !== 0) {
+        this.combo = 0;
+        this.emit('combo:changed', 0);
+      }
+      return;
+    }
 
     const prevLevel = this.level;
     this.totalLines += lines;
+    this.combo += 1;
 
     const isTetris = lines >= 4;
     const multiplier = isTetris && this._lastClearTetris ? 1.5 : 1;
@@ -172,6 +183,7 @@ export class Player extends EventEmitter<PlayerEvents> {
     this._lastClearTetris = isTetris;
 
     this.emit('score:changed', this.score);
+    this.emit('combo:changed', this.combo);
     this.emit('lines:cleared', lines);
     if (this.level !== prevLevel) this.emit('level:changed', this.level);
   }
