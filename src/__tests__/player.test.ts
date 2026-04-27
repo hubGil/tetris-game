@@ -1,13 +1,14 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { Arena }  from '@/arena.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { Arena } from '@/arena.js';
 import { Player } from '@/player.js';
 
 describe('Player', () => {
-  let arena;
-  let player;
+  let arena: Arena;
+  let player: Player;
 
   beforeEach(() => {
-    arena  = new Arena(12, 20);
+    arena = new Arena(12, 20);
     player = new Player(arena);
   });
 
@@ -76,7 +77,7 @@ describe('Player', () => {
 
     it('returns false when the spawn position is fully blocked', () => {
       player.reset();
-      for (let y = 0; y < arena.height; y++) arena.grid[y].fill(1);
+      for (let y = 0; y < arena.height; y += 1) arena.grid[y].fill(1);
       expect(player.reset()).toBe(false);
     });
 
@@ -90,18 +91,20 @@ describe('Player', () => {
 
     it('resets canHold to true', () => {
       player.reset();
-      player.hold(); // uses the hold, canHold becomes false
-      player.reset(); // new piece
+      player.hold();
+      player.reset();
       expect(player.canHold).toBe(true);
     });
   });
 
   describe('hold', () => {
-    beforeEach(() => { player.reset(); });
+    beforeEach(() => {
+      player.reset();
+    });
 
     it('stores current type and advances to next piece on first hold', () => {
       const originalType = player._currentType;
-      const nextType     = player._nextType;
+      const nextType = player._nextType;
       player.hold();
       expect(player._holdType).toBe(originalType);
       expect(player._currentType).toBe(nextType);
@@ -112,17 +115,16 @@ describe('Player', () => {
       expect(player.canHold).toBe(false);
     });
 
-    it('returns null when hold is blocked (canHold=false)', () => {
+    it('returns null when hold is blocked', () => {
       player.hold();
       expect(player.hold()).toBeNull();
     });
 
     it('swaps current and hold on second hold', () => {
-      const firstType = player._currentType;
       player.hold();
-      const heldType = player._holdType; // should be firstType
-      player.reset(); // new piece to allow hold again
-      player.hold();  // swap
+      const heldType = player._holdType;
+      player.reset();
+      player.hold();
       expect(player._currentType).toBe(heldType);
     });
 
@@ -134,7 +136,7 @@ describe('Player', () => {
       expect(handler.mock.calls[0][0]).not.toBeNull();
     });
 
-    it('emits piece:next when advancing to next (first hold)', () => {
+    it('emits piece:next when advancing to next on first hold', () => {
       const handler = vi.fn();
       player.on('piece:next', handler);
       player.hold();
@@ -143,7 +145,9 @@ describe('Player', () => {
   });
 
   describe('move', () => {
-    beforeEach(() => { player.reset(); });
+    beforeEach(() => {
+      player.reset();
+    });
 
     it('shifts piece right', () => {
       const startX = player.pos.x;
@@ -152,6 +156,7 @@ describe('Player', () => {
     });
 
     it('does not move past left wall', () => {
+      player.matrix = [[1]];
       player.pos.x = 0;
       player.move(-1);
       expect(player.pos.x).toBe(0);
@@ -181,7 +186,9 @@ describe('Player', () => {
   });
 
   describe('drop', () => {
-    beforeEach(() => { player.reset(); });
+    beforeEach(() => {
+      player.reset();
+    });
 
     it('returns locked: false when space is available below', () => {
       player.pos.y = 0;
@@ -228,39 +235,53 @@ describe('Player', () => {
     });
   });
 
-  describe('commitClear — standard scoring', () => {
-    it('scores 100 × level for 1 line (level 1 = 100)', () => {
+  describe('commitClear', () => {
+    it('removes every pending row passed from the arena', () => {
+      arena.grid[16] = new Array(12).fill(8);
+      arena.grid[17] = new Array(12).fill(1);
+      arena.grid[18] = new Array(12).fill(2);
+      arena.grid[19] = new Array(12).fill(3);
+
+      player.commitClear([17, 18, 19]);
+
+      expect(arena.grid[0].every((cell) => cell === 0)).toBe(true);
+      expect(arena.grid[1].every((cell) => cell === 0)).toBe(true);
+      expect(arena.grid[2].every((cell) => cell === 0)).toBe(true);
+      expect(arena.grid[19]).toEqual(new Array(12).fill(8));
+    });
+
+    it('scores 100 times level for 1 line', () => {
       player.commitClear([19]);
       expect(player.score).toBe(100);
     });
 
-    it('scores 300 × level for 2 lines (level 1 = 300)', () => {
+    it('scores 300 times level for 2 lines', () => {
       player.commitClear([18, 19]);
       expect(player.score).toBe(300);
     });
 
-    it('scores 500 × level for 3 lines (level 1 = 500)', () => {
+    it('scores 500 times level for 3 lines', () => {
       player.commitClear([17, 18, 19]);
       expect(player.score).toBe(500);
     });
 
-    it('scores 800 × level for 4 lines — Tetris (level 1 = 800)', () => {
+    it('scores 800 times level for a Tetris', () => {
       player.commitClear([16, 17, 18, 19]);
       expect(player.score).toBe(800);
     });
 
-    it('scores 1200 × level for back-to-back Tetris (level 1 = 1200)', () => {
-      player.commitClear([16, 17, 18, 19]); // first Tetris
-      player.totalLines = 0; // keep level 1 for assertion clarity
+    it('scores 1200 times level for a back-to-back Tetris', () => {
+      player.commitClear([16, 17, 18, 19]);
+      player.totalLines = 0;
       player.score = 0;
-      player.commitClear([16, 17, 18, 19]); // back-to-back
+      player.commitClear([16, 17, 18, 19]);
       expect(player.score).toBe(1200);
     });
 
     it('scales with level', () => {
-      player.totalLines = 10; // level 2
+      player.totalLines = 10;
       player.commitClear([19]);
-      expect(player.score).toBe(200); // 100 × 2
+      expect(player.score).toBe(200);
     });
 
     it('emits score:changed with the updated score', () => {

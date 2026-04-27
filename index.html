@@ -1,76 +1,71 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tetris</title>
-  <link rel="stylesheet" href="./src/styles/main.scss">
-</head>
-<body>
-  <h1>TETRIS Do Nicolas</h1>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tetris</title>
+    <link rel="stylesheet" href="./src/styles/main.scss" />
+  </head>
+  <body>
+    <h1>TETRIS Do Nicolas</h1>
 
-  <div class="layout">
-
-    <!-- Left / mobile-bottom-left -->
-    <div class="ga-hold info-block">
-      <span class="label">HOLD <kbd>C</kbd></span>
-      <canvas id="hold" width="120" height="120"></canvas>
-    </div>
-
-    <!-- Left below hold / mobile-top -->
-    <div class="ga-stats">
-      <div class="info-block">
-        <span class="label">SCORE</span>
-        <div id="score">0</div>
+    <div class="layout">
+      <div class="ga-hold info-block">
+        <span class="label">HOLD <kbd>C</kbd></span>
+        <canvas id="hold" width="120" height="120"></canvas>
       </div>
-      <div class="info-block">
-        <span class="label">MELHOR</span>
-        <div id="highscore">0</div>
-      </div>
-      <div class="info-block">
-        <span class="label">LEVEL</span>
-        <div id="level">1</div>
-      </div>
-    </div>
 
-    <!-- Center -->
-    <div class="game-area">
-      <canvas id="tetris" width="240" height="400"></canvas>
-      <div id="game-over" class="overlay hidden">
-        <div class="overlay-content">
-          <h2>FIM DE JOGO</h2>
-          <p class="record-msg" data-record-msg></p>
-          <p class="final-score">Score: <strong data-final-score>0</strong></p>
-          <button id="play-again">JOGAR NOVAMENTE</button>
+      <div class="ga-stats">
+        <div class="info-block">
+          <span class="label">SCORE</span>
+          <div id="score">0</div>
+        </div>
+        <div class="info-block">
+          <span class="label">MELHOR</span>
+          <div id="highscore">0</div>
+        </div>
+        <div class="info-block">
+          <span class="label">LEVEL</span>
+          <div id="level">1</div>
         </div>
       </div>
+
+      <div class="game-area">
+        <canvas id="tetris" width="240" height="400"></canvas>
+        <div id="game-over" class="overlay hidden">
+          <div class="overlay-content">
+            <h2>FIM DE JOGO</h2>
+            <p class="record-msg" data-record-msg></p>
+            <p class="final-score">
+              Score: <strong data-final-score>0</strong>
+            </p>
+            <button id="play-again">JOGAR NOVAMENTE</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="ga-next info-block">
+        <span class="label">NEXT</span>
+        <canvas id="preview" width="120" height="120"></canvas>
+      </div>
+
+      <div class="ga-actions">
+        <button id="restart">RESTART</button>
+        <button id="mute">MUTE</button>
+      </div>
+
+      <div class="ga-scores info-block">
+        <span class="label">ULTIMOS</span>
+        <ol id="scores"></ol>
+      </div>
     </div>
 
-    <!-- Right / mobile-bottom-right -->
-    <div class="ga-next info-block">
-      <span class="label">NEXT</span>
-      <canvas id="preview" width="120" height="120"></canvas>
-    </div>
+    <p id="controls">
+      Left/Right mover &nbsp;|&nbsp; Down drop &nbsp;|&nbsp; Space hard drop
+      &nbsp;|&nbsp; Q/W rotacionar &nbsp;|&nbsp; C hold &nbsp;|&nbsp; P pausa
+      &nbsp;|&nbsp; M mute
+    </p>
 
-    <!-- Right below next / mobile-below-panels -->
-    <div class="ga-actions">
-      <button id="restart">RESTART</button>
-      <button id="mute">MUTE</button>
-    </div>
-
-    <!-- Right below actions / hidden on mobile -->
-    <div class="ga-scores info-block">
-      <span class="label">ÚLTIMOS</span>
-      <ol id="scores"></ol>
-    </div>
-
-  </div>
-
-  <p id="controls">
-    ← → mover &nbsp;|&nbsp; ↓ drop &nbsp;|&nbsp; Space hard drop
-    &nbsp;|&nbsp; Q/W rotar &nbsp;|&nbsp; C hold &nbsp;|&nbsp; P pausa &nbsp;|&nbsp; M mute
-  </p>
-
-  <script type="module" src="./src/index.js"></script>
-</body>
+    <script type="module" src="./src/index.ts"></script>
+  </body>
 </html>

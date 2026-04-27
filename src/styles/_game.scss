@@ -16,19 +16,31 @@ h1 {
   display: grid;
   grid-template-columns: 140px 240px 140px;
   grid-template-areas:
-    "hold  game  next   "
-    "stats game  actions"
-    ".     game  scores ";
+    'hold  game  next   '
+    'stats game  actions'
+    '.     game  scores ';
   gap: $spacing-lg;
   align-items: start;
 }
 
-.ga-hold    { grid-area: hold;    }
-.ga-stats   { grid-area: stats;   }
-.game-area  { grid-area: game;    }
-.ga-next    { grid-area: next;    }
-.ga-actions { grid-area: actions; }
-.ga-scores  { grid-area: scores;  }
+.ga-hold {
+  grid-area: hold;
+}
+.ga-stats {
+  grid-area: stats;
+}
+.game-area {
+  grid-area: game;
+}
+.ga-next {
+  grid-area: next;
+}
+.ga-actions {
+  grid-area: actions;
+}
+.ga-scores {
+  grid-area: scores;
+}
 
 // ── Game canvas ────────────────────────────────────────────────────────────────
 .game-area {
@@ -87,9 +99,18 @@ canvas#preview {
     font-size: $font-size-sm;
     padding: 0;
 
-    li    { display: flex; gap: 6px; align-items: baseline; }
-    .rank { color: $color-muted; }
-    .date { color: $color-muted; font-size: 0.7rem; }
+    li {
+      display: flex;
+      gap: 6px;
+      align-items: baseline;
+    }
+    .rank {
+      color: $color-muted;
+    }
+    .date {
+      color: $color-muted;
+      font-size: 0.7rem;
+    }
   }
 }
 
@@ -111,7 +132,9 @@ canvas#preview {
     transition: background 0.15s ease;
     width: 100%;
 
-    &:hover { background: $bg-hover; }
+    &:hover {
+      background: $bg-hover;
+    }
   }
 }
 
@@ -142,22 +165,26 @@ kbd {
 //   (scores hidden)
 //
 @media (max-width: $breakpoint-mobile) {
-  h1 { font-size: 1.1rem; }
+  h1 {
+    font-size: 1.1rem;
+  }
 
   .layout {
     grid-template-columns: 1fr 1fr;
     grid-template-areas:
-      "stats   stats  "
-      "game    game   "
-      "hold    next   "
-      "actions actions";
+      'stats   stats  '
+      'game    game   '
+      'hold    next   '
+      'actions actions';
     gap: $spacing-md;
     width: min(320px, 100%);
     margin: 0 auto;
   }
 
   // Scores hidden on mobile to save space
-  .ga-scores { display: none; }
+  .ga-scores {
+    display: none;
+  }
 
   // Game canvas scales to fill 2-column span
   .game-area {
@@ -195,6 +222,8 @@ kbd {
   // Actions as horizontal row
   .ga-actions {
     flex-direction: row;
-    button { flex: 1; }
+    button {
+      flex: 1;
+    }
   }
 }

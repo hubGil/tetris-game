@@ -1,8 +1,9 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
+
 import { Arena } from '@/arena.js';
 
 describe('Arena', () => {
-  let arena;
+  let arena: Arena;
 
   beforeEach(() => {
     arena = new Arena(10, 20);
@@ -10,7 +11,15 @@ describe('Arena', () => {
 
   describe('collides', () => {
     it('returns false on empty arena', () => {
-      expect(arena.collides([[1, 1], [1, 0]], { x: 0, y: 0 })).toBe(false);
+      expect(
+        arena.collides(
+          [
+            [1, 1],
+            [1, 0],
+          ],
+          { x: 0, y: 0 },
+        ),
+      ).toBe(false);
     });
 
     it('detects left wall collision', () => {
@@ -31,7 +40,6 @@ describe('Arena', () => {
     });
 
     it('ignores zero cells in matrix', () => {
-      // x=4 is filled, but matrix[0][0]=0 lands there — should not collide
       arena.grid[19][4] = 1;
       expect(arena.collides([[0, 1]], { x: 4, y: 19 })).toBe(false);
     });
@@ -39,7 +47,13 @@ describe('Arena', () => {
 
   describe('merge', () => {
     it('writes non-zero values into the grid', () => {
-      arena.merge([[1, 2], [0, 3]], { x: 2, y: 3 });
+      arena.merge(
+        [
+          [1, 2],
+          [0, 3],
+        ],
+        { x: 2, y: 3 },
+      );
       expect(arena.grid[3][2]).toBe(1);
       expect(arena.grid[3][3]).toBe(2);
       expect(arena.grid[4][3]).toBe(3);
@@ -83,11 +97,39 @@ describe('Arena', () => {
       arena.grid[19] = new Array(10).fill(1);
       arena.clearRows([19]);
       expect(arena.grid).toHaveLength(20);
-      expect(arena.grid[19].every(c => c === 0)).toBe(true);
+      expect(arena.grid[19].every((cell) => cell === 0)).toBe(true);
     });
 
     it('returns the number of rows cleared', () => {
       expect(arena.clearRows([18, 19])).toBe(2);
+    });
+
+    it('clears all targeted rows when multiple adjacent lines are removed', () => {
+      arena.grid[16] = new Array(10).fill(4);
+      arena.grid[17] = new Array(10).fill(1);
+      arena.grid[18] = new Array(10).fill(2);
+      arena.grid[19] = new Array(10).fill(3);
+
+      arena.clearRows([17, 18, 19]);
+
+      expect(arena.grid[0].every((cell) => cell === 0)).toBe(true);
+      expect(arena.grid[1].every((cell) => cell === 0)).toBe(true);
+      expect(arena.grid[2].every((cell) => cell === 0)).toBe(true);
+      expect(arena.grid[19]).toEqual(new Array(10).fill(4));
+    });
+
+    it('clears all targeted rows when multiple non-adjacent lines are removed', () => {
+      arena.grid[14] = new Array(10).fill(9);
+      arena.grid[16] = new Array(10).fill(1);
+      arena.grid[18] = new Array(10).fill(2);
+      arena.grid[19] = new Array(10).fill(3);
+
+      arena.clearRows([16, 18, 19]);
+
+      expect(arena.grid[0].every((cell) => cell === 0)).toBe(true);
+      expect(arena.grid[1].every((cell) => cell === 0)).toBe(true);
+      expect(arena.grid[2].every((cell) => cell === 0)).toBe(true);
+      expect(arena.grid[17]).toEqual(new Array(10).fill(9));
     });
 
     it('shifts rows above the cleared row downward', () => {
@@ -99,7 +141,7 @@ describe('Arena', () => {
     it('adds empty rows at the top', () => {
       arena.grid[19] = new Array(10).fill(1);
       arena.clearRows([19]);
-      expect(arena.grid[0].every(c => c === 0)).toBe(true);
+      expect(arena.grid[0].every((cell) => cell === 0)).toBe(true);
     });
   });
 
@@ -107,7 +149,7 @@ describe('Arena', () => {
     it('clears complete rows and returns the count', () => {
       arena.grid[19] = new Array(10).fill(1);
       expect(arena.sweep()).toBe(1);
-      expect(arena.grid[19].every(c => c === 0)).toBe(true);
+      expect(arena.grid[19].every((cell) => cell === 0)).toBe(true);
     });
 
     it('returns 0 when no rows are complete', () => {
