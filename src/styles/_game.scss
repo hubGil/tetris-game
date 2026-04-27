@@ -34,9 +34,27 @@ canvas {
   }
 
   #score,
+  #highscore,
   #level {
     font-size: $font-size-lg;
     min-height: 1.6rem;
+  }
+
+  #scores {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: $font-size-sm;
+
+    li {
+      display: flex;
+      gap: 6px;
+      align-items: baseline;
+    }
+
+    .rank { color: $color-muted; }
+    .date { color: $color-muted; font-size: 0.7rem; }
   }
 }
 

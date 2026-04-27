@@ -1,12 +1,15 @@
 export class Game {
-  constructor({ arena, player, renderer, previewRenderer, controls, scoreEl, levelEl }) {
+  constructor({ arena, player, renderer, previewRenderer, controls, storage, scoreEl, levelEl, highScoreEl, scoresEl }) {
     this.arena = arena;
     this.player = player;
     this.renderer = renderer;
     this.previewRenderer = previewRenderer;
     this.controls = controls;
+    this.storage = storage;
     this.scoreEl = scoreEl;
     this.levelEl = levelEl;
+    this.highScoreEl = highScoreEl;
+    this.scoresEl = scoresEl;
 
     this._dropCounter = 0;
     this._dropInterval = 1000;
@@ -16,6 +19,8 @@ export class Game {
     this._gameOver = false;
 
     this._bindControls();
+    this._updateHighScore();
+    this._renderScores();
   }
 
   start() {
@@ -106,18 +111,42 @@ export class Game {
     this._animId = requestAnimationFrame(t => this._loop(t));
   }
 
+  _triggerGameOver() {
+    this._running = false;
+    this._gameOver = true;
+
+    if (this.storage) {
+      const isNewRecord = this.storage.saveScore(this.player.score);
+      this._updateHighScore();
+      this._renderScores();
+      if (this.scoreEl) {
+        this.scoreEl.textContent = isNewRecord
+          ? `RECORDE! ${this.player.score}`
+          : `FIM — ${this.player.score}`;
+      }
+    } else if (this.scoreEl) {
+      this.scoreEl.textContent = `FIM — ${this.player.score}`;
+    }
+  }
+
   _renderPreview() {
     if (this.previewRenderer && this.player.nextMatrix) {
       this.previewRenderer.renderPreview(this.player.nextMatrix);
     }
   }
 
-  _triggerGameOver() {
-    this._running = false;
-    this._gameOver = true;
-    if (this.scoreEl) {
-      this.scoreEl.textContent = `GAME OVER — ${this.player.score}`;
+  _updateHighScore() {
+    if (this.highScoreEl && this.storage) {
+      this.highScoreEl.textContent = this.storage.getHighScore();
     }
+  }
+
+  _renderScores() {
+    if (!this.scoresEl || !this.storage) return;
+    const scores = this.storage.getScores();
+    this.scoresEl.innerHTML = scores
+      .map((s, i) => `<li><span class="rank">${i + 1}.</span> ${s.score} <span class="date">${s.date}</span></li>`)
+      .join('');
   }
 
   _updateHUD() {
