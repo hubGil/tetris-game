@@ -1,18 +1,38 @@
 @use 'variables' as *;
 
+// ── Typography ─────────────────────────────────────────────────────────────────
 h1 {
   letter-spacing: 4px;
+  font-size: 1.4rem;
 }
 
-.game-wrapper {
-  display: flex;
+// ── Grid layout — desktop ──────────────────────────────────────────────────────
+//
+//   hold  │  game  │  next
+//   stats │  game  │  actions
+//   .     │  game  │  scores
+//
+.layout {
+  display: grid;
+  grid-template-columns: 140px 240px 140px;
+  grid-template-areas:
+    "hold  game  next   "
+    "stats game  actions"
+    ".     game  scores ";
   gap: $spacing-lg;
-  align-items: flex-start;
+  align-items: start;
 }
 
+.ga-hold    { grid-area: hold;    }
+.ga-stats   { grid-area: stats;   }
+.game-area  { grid-area: game;    }
+.ga-next    { grid-area: next;    }
+.ga-actions { grid-area: actions; }
+.ga-scores  { grid-area: scores;  }
+
+// ── Game canvas ────────────────────────────────────────────────────────────────
 .game-area {
   position: relative;
-  flex-shrink: 0;
 
   canvas#tetris {
     display: block;
@@ -22,27 +42,24 @@ h1 {
   }
 }
 
+// ── Small canvases (hold / next) ───────────────────────────────────────────────
+canvas#hold,
 canvas#preview {
   border: $canvas-border;
   display: block;
 }
 
-.sidebar {
-  display: flex;
-  flex-direction: column;
-  gap: $spacing-md;
-  min-width: 120px;
-}
-
+// ── Info blocks ────────────────────────────────────────────────────────────────
 .info-block {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 
   .label {
     font-size: $font-size-sm;
     color: $color-muted;
     letter-spacing: 2px;
+    text-transform: uppercase;
   }
 
   #score,
@@ -51,44 +68,51 @@ canvas#preview {
     font-size: $font-size-lg;
     min-height: 1.6rem;
   }
+}
 
+// Stats column (score + melhor + level stacked)
+.ga-stats {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+// Scores list
+.ga-scores {
   #scores {
     list-style: none;
     display: flex;
     flex-direction: column;
     gap: 4px;
     font-size: $font-size-sm;
+    padding: 0;
 
-    li {
-      display: flex;
-      gap: 6px;
-      align-items: baseline;
-    }
-
+    li    { display: flex; gap: 6px; align-items: baseline; }
     .rank { color: $color-muted; }
     .date { color: $color-muted; font-size: 0.7rem; }
   }
 }
 
-.sidebar-actions {
+// ── Buttons ────────────────────────────────────────────────────────────────────
+.ga-actions {
   display: flex;
+  flex-direction: column;
   gap: $spacing-sm;
-}
 
-.sidebar-actions button,
-#restart {
-  background: $bg-surface;
-  color: $color-text;
-  border: 1px solid $color-border-light;
-  padding: $spacing-sm $spacing-md;
-  font-family: $font-mono;
-  font-size: $font-size-sm;
-  cursor: pointer;
-  letter-spacing: 2px;
-  transition: background 0.15s ease;
-  flex: 1;
+  button {
+    background: $bg-surface;
+    color: $color-text;
+    border: 1px solid $color-border-light;
+    padding: $spacing-sm;
+    font-family: $font-mono;
+    font-size: $font-size-sm;
+    cursor: pointer;
+    letter-spacing: 2px;
+    transition: background 0.15s ease;
+    width: 100%;
 
-  &:hover { background: $bg-hover; }
+    &:hover { background: $bg-hover; }
+  }
 }
 
 kbd {
@@ -100,45 +124,77 @@ kbd {
   font-family: $font-mono;
 }
 
+// ── Controls hint ──────────────────────────────────────────────────────────────
 #controls {
   color: $color-muted;
   font-size: $font-size-sm;
   text-align: center;
-  line-height: 1.6;
+  line-height: 1.8;
+  margin-top: $spacing-sm;
 }
 
-// ── Responsive ───────────────────────────────────────────────────────────────
+// ── Mobile layout ──────────────────────────────────────────────────────────────
+//
+//   stats  stats
+//   game   game
+//   hold   next
+//   actions actions
+//   (scores hidden)
+//
 @media (max-width: $breakpoint-mobile) {
-  h1 { font-size: 1.2rem; }
+  h1 { font-size: 1.1rem; }
 
-  .game-wrapper {
-    flex-direction: column;
-    align-items: center;
+  .layout {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "stats   stats  "
+      "game    game   "
+      "hold    next   "
+      "actions actions";
+    gap: $spacing-md;
+    width: min(320px, 100%);
+    margin: 0 auto;
   }
 
-  .game-area canvas#tetris {
-    width: min(240px, 90vw);
-    height: auto;
-    aspect-ratio: 3 / 5;
+  // Scores hidden on mobile to save space
+  .ga-scores { display: none; }
+
+  // Game canvas scales to fill 2-column span
+  .game-area {
+    justify-self: center;
+
+    canvas#tetris {
+      width: min(240px, calc(100vw - #{$spacing-lg * 2}));
+      height: auto;
+      aspect-ratio: 3 / 5;
+    }
   }
 
-  .sidebar {
+  // Stats as horizontal row above the game
+  .ga-stats {
     flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: center;
-    min-width: unset;
-    width: 100%;
-    max-width: 320px;
-    gap: $spacing-sm;
+    justify-content: space-around;
+    text-align: center;
   }
 
-  .info-block {
-    min-width: 80px;
+  // Hold and next centered in their cells
+  .ga-hold,
+  .ga-next {
     align-items: center;
+    text-align: center;
   }
 
-  // Hide history on small screens to save space
-  .info-block:has(#scores) {
-    display: none;
+  // Small canvases scale with their cell
+  canvas#hold,
+  canvas#preview {
+    width: min(120px, 90%);
+    height: auto;
+    aspect-ratio: 1 / 1;
+  }
+
+  // Actions as horizontal row
+  .ga-actions {
+    flex-direction: row;
+    button { flex: 1; }
   }
 }
