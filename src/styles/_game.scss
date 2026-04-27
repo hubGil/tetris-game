@@ -70,18 +70,34 @@ canvas#preview {
   }
 }
 
+.sidebar-actions {
+  display: flex;
+  gap: $spacing-sm;
+}
+
+.sidebar-actions button,
 #restart {
   background: $bg-surface;
   color: $color-text;
   border: 1px solid $color-border-light;
-  padding: $spacing-sm $spacing-lg;
+  padding: $spacing-sm $spacing-md;
   font-family: $font-mono;
-  font-size: $font-size-base;
+  font-size: $font-size-sm;
   cursor: pointer;
   letter-spacing: 2px;
   transition: background 0.15s ease;
+  flex: 1;
 
   &:hover { background: $bg-hover; }
+}
+
+kbd {
+  font-size: 0.65rem;
+  color: $color-muted;
+  border: 1px solid $color-border;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-family: $font-mono;
 }
 
 #controls {

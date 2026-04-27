@@ -26,11 +26,19 @@ describe('Player', () => {
 
   describe('resetStats', () => {
     it('resets score and totalLines to 0', () => {
-      player.score = 100;
+      player.score = 500;
       player.totalLines = 15;
       player.resetStats();
       expect(player.score).toBe(0);
       expect(player.totalLines).toBe(0);
+    });
+
+    it('resets hold state', () => {
+      player.reset();
+      player.hold();
+      player.resetStats();
+      expect(player.holdMatrix).toBeNull();
+      expect(player._holdType).toBeNull();
     });
 
     it('emits score:changed with 0', () => {
@@ -45,6 +53,13 @@ describe('Player', () => {
       player.on('level:changed', handler);
       player.resetStats();
       expect(handler).toHaveBeenCalledWith(1);
+    });
+
+    it('emits piece:hold with null', () => {
+      const handler = vi.fn();
+      player.on('piece:hold', handler);
+      player.resetStats();
+      expect(handler).toHaveBeenCalledWith(null);
     });
   });
 
@@ -72,6 +87,59 @@ describe('Player', () => {
       expect(handler).toHaveBeenCalledOnce();
       expect(player.nextMatrix).not.toBeNull();
     });
+
+    it('resets canHold to true', () => {
+      player.reset();
+      player.hold(); // uses the hold, canHold becomes false
+      player.reset(); // new piece
+      expect(player.canHold).toBe(true);
+    });
+  });
+
+  describe('hold', () => {
+    beforeEach(() => { player.reset(); });
+
+    it('stores current type and advances to next piece on first hold', () => {
+      const originalType = player._currentType;
+      const nextType     = player._nextType;
+      player.hold();
+      expect(player._holdType).toBe(originalType);
+      expect(player._currentType).toBe(nextType);
+    });
+
+    it('sets canHold to false after hold', () => {
+      player.hold();
+      expect(player.canHold).toBe(false);
+    });
+
+    it('returns null when hold is blocked (canHold=false)', () => {
+      player.hold();
+      expect(player.hold()).toBeNull();
+    });
+
+    it('swaps current and hold on second hold', () => {
+      const firstType = player._currentType;
+      player.hold();
+      const heldType = player._holdType; // should be firstType
+      player.reset(); // new piece to allow hold again
+      player.hold();  // swap
+      expect(player._currentType).toBe(heldType);
+    });
+
+    it('emits piece:hold with the held matrix', () => {
+      const handler = vi.fn();
+      player.on('piece:hold', handler);
+      player.hold();
+      expect(handler).toHaveBeenCalledOnce();
+      expect(handler.mock.calls[0][0]).not.toBeNull();
+    });
+
+    it('emits piece:next when advancing to next (first hold)', () => {
+      const handler = vi.fn();
+      player.on('piece:next', handler);
+      player.hold();
+      expect(handler).toHaveBeenCalledOnce();
+    });
   });
 
   describe('move', () => {
@@ -90,11 +158,25 @@ describe('Player', () => {
     });
 
     it('does not move past right wall', () => {
-      // Use a 1-wide piece for a deterministic right boundary
       player.matrix = [[1]];
       player.pos.x = arena.width - 1;
       player.move(1);
       expect(player.pos.x).toBe(arena.width - 1);
+    });
+
+    it('emits piece:moved on successful move', () => {
+      const handler = vi.fn();
+      player.on('piece:moved', handler);
+      player.move(1);
+      expect(handler).toHaveBeenCalledOnce();
+    });
+
+    it('does not emit piece:moved when blocked', () => {
+      const handler = vi.fn();
+      player.on('piece:moved', handler);
+      player.pos.x = 0;
+      player.move(-1);
+      expect(handler).not.toHaveBeenCalled();
     });
   });
 
@@ -113,20 +195,27 @@ describe('Player', () => {
     });
 
     it('returns locked: true when piece hits the floor', () => {
-      // Use a 1x1 piece for a deterministic floor test
       player.matrix = [[1]];
       player.pos.y = arena.height - 1;
       expect(player.drop().locked).toBe(true);
     });
 
     it('returns pendingRows when a line is completed', () => {
-      // Fill the bottom row, place a 1x1 piece on top of it
       arena.grid[19].fill(1);
       player.matrix = [[1]];
       player.pos = { x: 0, y: 18 };
       const { locked, pendingRows } = player.drop();
       expect(locked).toBe(true);
       expect(pendingRows).toContain(19);
+    });
+
+    it('emits piece:locked when locking', () => {
+      const handler = vi.fn();
+      player.on('piece:locked', handler);
+      player.matrix = [[1]];
+      player.pos.y = arena.height - 1;
+      player.drop();
+      expect(handler).toHaveBeenCalledOnce();
     });
   });
 
@@ -139,36 +228,67 @@ describe('Player', () => {
     });
   });
 
-  describe('commitClear', () => {
-    it('scores 10 points for 1 line', () => {
+  describe('commitClear — standard scoring', () => {
+    it('scores 100 × level for 1 line (level 1 = 100)', () => {
       player.commitClear([19]);
-      expect(player.score).toBe(10);
+      expect(player.score).toBe(100);
     });
 
-    it('uses exponential multiplier for multiple lines (1+2 = 30 for 2 lines)', () => {
+    it('scores 300 × level for 2 lines (level 1 = 300)', () => {
       player.commitClear([18, 19]);
-      expect(player.score).toBe(30);
+      expect(player.score).toBe(300);
+    });
+
+    it('scores 500 × level for 3 lines (level 1 = 500)', () => {
+      player.commitClear([17, 18, 19]);
+      expect(player.score).toBe(500);
+    });
+
+    it('scores 800 × level for 4 lines — Tetris (level 1 = 800)', () => {
+      player.commitClear([16, 17, 18, 19]);
+      expect(player.score).toBe(800);
+    });
+
+    it('scores 1200 × level for back-to-back Tetris (level 1 = 1200)', () => {
+      player.commitClear([16, 17, 18, 19]); // first Tetris
+      player.totalLines = 0; // keep level 1 for assertion clarity
+      player.score = 0;
+      player.commitClear([16, 17, 18, 19]); // back-to-back
+      expect(player.score).toBe(1200);
+    });
+
+    it('scales with level', () => {
+      player.totalLines = 10; // level 2
+      player.commitClear([19]);
+      expect(player.score).toBe(200); // 100 × 2
     });
 
     it('emits score:changed with the updated score', () => {
       const handler = vi.fn();
       player.on('score:changed', handler);
       player.commitClear([19]);
-      expect(handler).toHaveBeenCalledWith(10);
+      expect(handler).toHaveBeenCalledWith(100);
+    });
+
+    it('emits lines:cleared with the number of lines', () => {
+      const handler = vi.fn();
+      player.on('lines:cleared', handler);
+      player.commitClear([18, 19]);
+      expect(handler).toHaveBeenCalledWith(2);
     });
 
     it('emits level:changed when crossing a level threshold', () => {
       const handler = vi.fn();
       player.on('level:changed', handler);
       player.totalLines = 9;
-      player.commitClear([19]); // totalLines becomes 10 → level 2
+      player.commitClear([19]);
       expect(handler).toHaveBeenCalledWith(2);
     });
 
     it('does not emit level:changed when level stays the same', () => {
       const handler = vi.fn();
       player.on('level:changed', handler);
-      player.commitClear([19]); // totalLines: 0 → 1, still level 1
+      player.commitClear([19]);
       expect(handler).not.toHaveBeenCalled();
     });
   });

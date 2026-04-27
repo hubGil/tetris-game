@@ -60,9 +60,20 @@ export class Game extends EventEmitter {
       .on('moveRight',   () => this.player.move(1))
       .on('drop',        () => this._manualDrop())
       .on('hardDrop',    () => this._doHardDrop())
+      .on('hold',        () => this._doHold())
       .on('rotateLeft',  () => this.player.rotate(-1))
       .on('rotateRight', () => this.player.rotate(1))
       .on('pause',       () => this.togglePause());
+  }
+
+  _doHold() {
+    if (!this._running) return;
+    const ok = this.player.hold();
+    // null = hold blocked (canHold=false), false = game over
+    if (ok === false) {
+      this._running = false;
+      this._triggerGameOver();
+    }
   }
 
   _manualDrop() {

@@ -22,6 +22,10 @@
     </div>
     <aside class="sidebar">
       <div class="info-block">
+        <span class="label">HOLD <kbd>C</kbd></span>
+        <canvas id="hold" width="120" height="120"></canvas>
+      </div>
+      <div class="info-block">
         <span class="label">SCORE</span>
         <div id="score">0</div>
       </div>
@@ -37,7 +41,10 @@
         <span class="label">NEXT</span>
         <canvas id="preview" width="120" height="120"></canvas>
       </div>
-      <button id="restart">RESTART</button>
+      <div class="sidebar-actions">
+        <button id="restart">RESTART</button>
+        <button id="mute">MUTE</button>
+      </div>
       <div class="info-block">
         <span class="label">ÚLTIMOS</span>
         <ol id="scores"></ol>
@@ -45,7 +52,7 @@
     </aside>
   </div>
   <div id="controls">
-    ← → move &nbsp;|&nbsp; ↓ drop &nbsp;|&nbsp; Space hard drop &nbsp;|&nbsp; Q/W rotate &nbsp;|&nbsp; P pause
+    ← → mover &nbsp;|&nbsp; ↓ drop &nbsp;|&nbsp; Space hard drop &nbsp;|&nbsp; Q/W rotar &nbsp;|&nbsp; C hold &nbsp;|&nbsp; P pausa &nbsp;|&nbsp; M mute
   </div>
   <script type="module" src="./src/index.js"></script>
 </body>

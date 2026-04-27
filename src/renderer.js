@@ -27,12 +27,14 @@ export class Renderer {
     this.ctx.globalAlpha = 1;
   }
 
+  // Renders a single piece centered; pass null to show an empty slot
   renderPreview(matrix) {
     const { ctx, canvas, cellSize } = this;
     const logicalW = canvas.width / cellSize;
     const logicalH = canvas.height / cellSize;
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, logicalW, logicalH);
+    if (!matrix) return;
     const offsetX = Math.floor((logicalW - matrix[0].length) / 2);
     const offsetY = Math.floor((logicalH - matrix.length) / 2);
     this._drawMatrix(matrix, { x: offsetX, y: offsetY });
