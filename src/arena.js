@@ -29,18 +29,25 @@ export class Arena {
     });
   }
 
-  // Returns number of lines cleared
+  // Returns indices of complete rows without clearing them
+  findCompleteRows() {
+    return this.grid
+      .map((row, y) => ({ row, y }))
+      .filter(({ row }) => row.every(cell => cell !== 0))
+      .map(({ y }) => y);
+  }
+
+  // Clears specific rows by index and adds empty rows at top
+  clearRows(indices) {
+    [...indices].sort((a, b) => b - a).forEach(y => {
+      this.grid.splice(y, 1);
+      this.grid.unshift(new Array(this.width).fill(0));
+    });
+    return indices.length;
+  }
+
   sweep() {
-    let linesCleared = 0;
-    for (let y = this.grid.length - 1; y > 0; y--) {
-      if (this.grid[y].every(cell => cell !== 0)) {
-        const row = this.grid.splice(y, 1)[0].fill(0);
-        this.grid.unshift(row);
-        y++;
-        linesCleared++;
-      }
-    }
-    return linesCleared;
+    return this.clearRows(this.findCompleteRows());
   }
 
   reset() {

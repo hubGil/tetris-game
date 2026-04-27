@@ -15,6 +15,18 @@ export class Renderer {
     this._drawMatrix(player.matrix, player.pos);
   }
 
+  // progress: 0 → 1 over the flash duration (3 blinks, fading out)
+  renderFlash(rows, progress) {
+    const blink = Math.sin(progress * Math.PI * 6) > 0;
+    if (!blink) return;
+    this.ctx.globalAlpha = 0.85 * (1 - progress * 0.6);
+    this.ctx.fillStyle = '#fff';
+    rows.forEach(y => {
+      this.ctx.fillRect(0, y, this.canvas.width / this.cellSize, 1);
+    });
+    this.ctx.globalAlpha = 1;
+  }
+
   renderPreview(matrix) {
     const { ctx, canvas, cellSize } = this;
     const logicalW = canvas.width / cellSize;

@@ -10,7 +10,19 @@ h1 {
   align-items: flex-start;
 }
 
-canvas {
+.game-area {
+  position: relative;
+  flex-shrink: 0;
+
+  canvas#tetris {
+    display: block;
+    border: $canvas-border;
+    width: 240px;
+    height: 400px;
+  }
+}
+
+canvas#preview {
   border: $canvas-border;
   display: block;
 }
@@ -69,9 +81,7 @@ canvas {
   letter-spacing: 2px;
   transition: background 0.15s ease;
 
-  &:hover {
-    background: $bg-hover;
-  }
+  &:hover { background: $bg-hover; }
 }
 
 #controls {
@@ -79,4 +89,40 @@ canvas {
   font-size: $font-size-sm;
   text-align: center;
   line-height: 1.6;
+}
+
+// ── Responsive ───────────────────────────────────────────────────────────────
+@media (max-width: $breakpoint-mobile) {
+  h1 { font-size: 1.2rem; }
+
+  .game-wrapper {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .game-area canvas#tetris {
+    width: min(240px, 90vw);
+    height: auto;
+    aspect-ratio: 3 / 5;
+  }
+
+  .sidebar {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    min-width: unset;
+    width: 100%;
+    max-width: 320px;
+    gap: $spacing-sm;
+  }
+
+  .info-block {
+    min-width: 80px;
+    align-items: center;
+  }
+
+  // Hide history on small screens to save space
+  .info-block:has(#scores) {
+    display: none;
+  }
 }

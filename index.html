@@ -9,7 +9,17 @@
 <body>
   <h1>TETRIS Do Nicolas</h1>
   <div class="game-wrapper">
-    <canvas id="tetris" width="240" height="400"></canvas>
+    <div class="game-area">
+      <canvas id="tetris" width="240" height="400"></canvas>
+      <div id="game-over" class="overlay hidden">
+        <div class="overlay-content">
+          <h2>FIM DE JOGO</h2>
+          <p class="record-msg" data-record-msg></p>
+          <p class="final-score">Score: <strong data-final-score>0</strong></p>
+          <button id="play-again">JOGAR NOVAMENTE</button>
+        </div>
+      </div>
+    </div>
     <aside class="sidebar">
       <div class="info-block">
         <span class="label">SCORE</span>

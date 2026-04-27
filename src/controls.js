@@ -4,6 +4,7 @@
  * Usage:
  *   const controls = new Controls({ ArrowLeft: 'moveLeft', ArrowRight: 'moveRight' });
  *   controls.on('moveLeft', () => player.move(-1));
+ *   controls.trigger('moveLeft'); // fire programmatically (e.g. from touch)
  *   controls.destroy(); // remove listeners
  */
 export class Controls {
@@ -21,6 +22,11 @@ export class Controls {
 
   off(action) {
     delete this._handlers[action];
+    return this;
+  }
+
+  trigger(action) {
+    this._handlers[action]?.();
     return this;
   }
 

@@ -1,5 +1,5 @@
 export class Game {
-  constructor({ arena, player, renderer, previewRenderer, controls, storage, scoreEl, levelEl, highScoreEl, scoresEl }) {
+  constructor({ arena, player, renderer, previewRenderer, controls, storage, scoreEl, levelEl, highScoreEl, scoresEl, overlayEl }) {
     this.arena = arena;
     this.player = player;
     this.renderer = renderer;
@@ -10,6 +10,7 @@ export class Game {
     this.levelEl = levelEl;
     this.highScoreEl = highScoreEl;
     this.scoresEl = scoresEl;
+    this.overlayEl = overlayEl;
 
     this._dropCounter = 0;
     this._dropInterval = 1000;
@@ -17,6 +18,10 @@ export class Game {
     this._animId = null;
     this._running = false;
     this._gameOver = false;
+    this._flashing = false;
+    this._flashRows = [];
+    this._flashStart = 0;
+    this._flashDuration = 400;
 
     this._bindControls();
     this._updateHighScore();
@@ -24,7 +29,9 @@ export class Game {
   }
 
   start() {
+    this._hideOverlay();
     this._gameOver = false;
+    this._flashing = false;
     this.arena.reset();
     this.player.score = 0;
     this.player.totalLines = 0;
@@ -41,7 +48,7 @@ export class Game {
   }
 
   togglePause() {
-    if (this._gameOver) return;
+    if (this._gameOver || this._flashing) return;
     this._running = !this._running;
     if (this._running) {
       this._lastTime = 0;
@@ -53,8 +60,8 @@ export class Game {
     this.controls
       .on('moveLeft',    () => this.player.move(-1))
       .on('moveRight',   () => this.player.move(1))
-      .on('drop',        () => { this._manualDrop(); })
-      .on('hardDrop',    () => { this._doHardDrop(); })
+      .on('drop',        () => this._manualDrop())
+      .on('hardDrop',    () => this._doHardDrop())
       .on('rotateLeft',  () => this.player.rotate(-1))
       .on('rotateRight', () => this.player.rotate(1))
       .on('pause',       () => this.togglePause());
@@ -62,16 +69,16 @@ export class Game {
 
   _manualDrop() {
     if (!this._running) return;
-    const locked = this.player.drop();
+    const { locked, pendingRows } = this.player.drop();
     this._dropCounter = 0;
-    if (locked) this._onPieceLocked();
+    if (locked) this._onPieceLocked(pendingRows);
   }
 
   _doHardDrop() {
     if (!this._running) return;
-    this.player.hardDrop();
+    const { pendingRows } = this.player.hardDrop();
     this._dropCounter = 0;
-    this._onPieceLocked();
+    this._onPieceLocked(pendingRows);
   }
 
   _loop(time) {
@@ -82,10 +89,11 @@ export class Game {
     this._dropCounter += delta;
 
     if (this._dropCounter >= this._dropInterval) {
-      const locked = this.player.drop();
+      const { locked, pendingRows } = this.player.drop();
       this._dropCounter = 0;
       if (locked) {
-        this._onPieceLocked();
+        this._running = false;
+        this._onPieceLocked(pendingRows);
         return;
       }
     }
@@ -94,8 +102,36 @@ export class Game {
     this._animId = requestAnimationFrame(t => this._loop(t));
   }
 
-  _onPieceLocked() {
-    // Level increases every 10 lines; speed caps at 100ms
+  _onPieceLocked(pendingRows) {
+    this._running = false;
+    if (pendingRows.length > 0) {
+      this._startFlash(pendingRows);
+    } else {
+      this._finalizeLock([]);
+    }
+  }
+
+  _startFlash(rows) {
+    this._flashing = true;
+    this._flashRows = rows;
+    this._flashStart = performance.now();
+    requestAnimationFrame(t => this._flashLoop(t));
+  }
+
+  _flashLoop(time) {
+    const progress = Math.min((time - this._flashStart) / this._flashDuration, 1);
+    this.renderer.render(this.arena, this.player);
+    this.renderer.renderFlash(this._flashRows, progress);
+    if (progress < 1) {
+      requestAnimationFrame(t => this._flashLoop(t));
+    } else {
+      this._flashing = false;
+      this._finalizeLock(this._flashRows);
+    }
+  }
+
+  _finalizeLock(pendingRows) {
+    this.player.commitClear(pendingRows);
     this._dropInterval = Math.max(100, 1000 - (this.player.level - 1) * 100);
 
     const ok = this.player.reset();
@@ -107,6 +143,9 @@ export class Game {
       return;
     }
 
+    this._running = true;
+    this._lastTime = 0;
+    this._dropCounter = 0;
     this.renderer.render(this.arena, this.player);
     this._animId = requestAnimationFrame(t => this._loop(t));
   }
@@ -115,18 +154,31 @@ export class Game {
     this._running = false;
     this._gameOver = true;
 
+    let isNewRecord = false;
     if (this.storage) {
-      const isNewRecord = this.storage.saveScore(this.player.score);
+      isNewRecord = this.storage.saveScore(this.player.score);
       this._updateHighScore();
       this._renderScores();
-      if (this.scoreEl) {
-        this.scoreEl.textContent = isNewRecord
-          ? `RECORDE! ${this.player.score}`
-          : `FIM — ${this.player.score}`;
-      }
-    } else if (this.scoreEl) {
-      this.scoreEl.textContent = `FIM — ${this.player.score}`;
     }
+
+    if (this.scoreEl) {
+      this.scoreEl.textContent = this.player.score;
+    }
+
+    this._showOverlay(isNewRecord);
+  }
+
+  _showOverlay(isNewRecord) {
+    if (!this.overlayEl) return;
+    const finalScoreEl = this.overlayEl.querySelector('[data-final-score]');
+    const recordMsgEl  = this.overlayEl.querySelector('[data-record-msg]');
+    if (finalScoreEl) finalScoreEl.textContent = this.player.score;
+    if (recordMsgEl)  recordMsgEl.textContent  = isNewRecord ? 'NOVO RECORDE!' : '';
+    this.overlayEl.classList.remove('hidden');
+  }
+
+  _hideOverlay() {
+    this.overlayEl?.classList.add('hidden');
   }
 
   _renderPreview() {

@@ -48,17 +48,15 @@ export class Player {
     }
   }
 
-  // Returns true when the piece locks into the arena
+  // Returns { locked, pendingRows } — rows NOT cleared yet (Game handles flash + clear)
   drop() {
     this.pos.y++;
     if (this.arena.collides(this.matrix, this.pos)) {
       this.pos.y--;
       this.arena.merge(this.matrix, this.pos);
-      const lines = this.arena.sweep();
-      this._addScore(lines);
-      return true;
+      return { locked: true, pendingRows: this.arena.findCompleteRows() };
     }
-    return false;
+    return { locked: false, pendingRows: [] };
   }
 
   hardDrop() {
@@ -66,9 +64,17 @@ export class Player {
       this.pos.y++;
     }
     this.arena.merge(this.matrix, this.pos);
-    const lines = this.arena.sweep();
+    return { locked: true, pendingRows: this.arena.findCompleteRows() };
+  }
+
+  // Called by Game after the flash animation completes
+  commitClear(pendingRows) {
+    const lines = this.arena.clearRows(pendingRows);
     this._addScore(lines);
-    return true;
+  }
+
+  trigger(action) {
+    if (this._handlers?.[action]) this._handlers[action]();
   }
 
   _randomPiece() {
