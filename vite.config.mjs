@@ -28,6 +28,16 @@ function createServiceWorker(base) {
       const source = `
 const CACHE_NAME = 'tetris-cache-v1';
 const PRECACHE_URLS = ${JSON.stringify(uniqueFiles, null, 2)};
+const ASSET_CACHE_PATTERNS = [
+  /^${normalizedBase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}assets\\//,
+  /^${normalizedBase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}icons\\//,
+  /^${normalizedBase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}manifest\\.webmanifest$/,
+  /^${normalizedBase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}favicon\\./,
+];
+
+function shouldCache(requestUrl) {
+  return ASSET_CACHE_PATTERNS.some((pattern) => pattern.test(requestUrl.pathname));
+}
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -61,6 +71,8 @@ self.addEventListener('fetch', (event) => {
     );
     return;
   }
+
+  if (!shouldCache(requestUrl)) return;
 
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
