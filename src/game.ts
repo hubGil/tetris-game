@@ -256,12 +256,21 @@ export class Game extends EventEmitter<GameEvents> {
     if (!this.scoresEl || !this.storage) return;
 
     const scores = this.storage.getScores();
-    this.scoresEl.innerHTML = scores
-      .map(
-        (score, index) =>
-          `<li><span class="rank">${index + 1}.</span> ${score.score} <span class="date">${score.date}</span></li>`,
-      )
-      .join('');
+    this.scoresEl.replaceChildren();
+
+    scores.forEach((score, index) => {
+      const item = document.createElement('li');
+      const rank = document.createElement('span');
+      rank.className = 'rank';
+      rank.textContent = `${index + 1}.`;
+
+      const date = document.createElement('span');
+      date.className = 'date';
+      date.textContent = score.date;
+
+      item.append(rank, ` ${score.score} `, date);
+      this.scoresEl?.append(item);
+    });
   }
 
   private _setState(state: GameState): void {
