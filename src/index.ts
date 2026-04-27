@@ -3,6 +3,7 @@ import { AudioManager } from '@/audio.js';
 import { Controls } from '@/controls.js';
 import { Game } from '@/game.js';
 import { Player } from '@/player.js';
+import { registerServiceWorker } from '@/pwa.js';
 import { Renderer } from '@/renderer.js';
 import { Storage } from '@/storage.js';
 import { TouchControls } from '@/touch-controls.js';
@@ -94,3 +95,4 @@ playAgainBtn.addEventListener('click', () => game.start());
 muteBtn.addEventListener('click', () => controls.trigger('mute'));
 
 game.start();
+registerServiceWorker();

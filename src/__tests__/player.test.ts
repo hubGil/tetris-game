@@ -179,6 +179,7 @@ describe('Player', () => {
     it('does not emit piece:moved when blocked', () => {
       const handler = vi.fn();
       player.on('piece:moved', handler);
+      player.matrix = [[1]];
       player.pos.x = 0;
       player.move(-1);
       expect(handler).not.toHaveBeenCalled();
