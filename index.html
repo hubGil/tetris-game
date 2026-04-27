@@ -1,14 +1,50 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Tetris</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tetris</title>
+  <style>
+    body {
+      background: #1a1a2e;
+      color: #eee;
+      font-family: monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px;
+      gap: 12px;
+    }
+    h1 { margin: 0; letter-spacing: 4px; }
+    #score { font-size: 1.4rem; min-height: 1.6rem; }
+    canvas { border: 2px solid #444; display: block; }
+    #restart {
+      background: #333;
+      color: #eee;
+      border: 1px solid #555;
+      padding: 8px 24px;
+      font-family: monospace;
+      font-size: 1rem;
+      cursor: pointer;
+      letter-spacing: 2px;
+    }
+    #restart:hover { background: #444; }
+    #controls {
+      color: #888;
+      font-size: 0.8rem;
+      text-align: center;
+      line-height: 1.6;
+    }
+  </style>
 </head>
 <body>
-	<h1>My tetris</h1>
-	<div id="score"></div>
-	<canvas id="tetris" width="240" height="400"></canvas>
-	<script type="module" src="./src/index.js"></script>
+  <h1>TETRIS</h1>
+  <div id="score">0</div>
+  <canvas id="tetris" width="240" height="400"></canvas>
+  <button id="restart">RESTART</button>
+  <div id="controls">
+    ← → move &nbsp;|&nbsp; ↓ drop &nbsp;|&nbsp; Q/W rotate &nbsp;|&nbsp; P pause
+  </div>
+  <script type="module" src="./src/index.js"></script>
 </body>
 </html>
