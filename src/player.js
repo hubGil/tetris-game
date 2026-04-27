@@ -5,14 +5,22 @@ export class Player {
     this.arena = arena;
     this.pos = { x: 0, y: 0 };
     this.matrix = null;
+    this.nextMatrix = null;
     this.score = 0;
+    this.totalLines = 0;
+  }
+
+  get level() {
+    return Math.floor(this.totalLines / 10) + 1;
   }
 
   // Returns false if spawn position collides (game over)
   reset() {
-    const types = Object.keys(PIECES);
-    const type = types[Math.floor(Math.random() * types.length)];
-    this.matrix = PIECES[type].map(row => [...row]);
+    if (!this.nextMatrix) {
+      this.nextMatrix = this._randomPiece();
+    }
+    this.matrix = this.nextMatrix;
+    this.nextMatrix = this._randomPiece();
     this.pos.y = 0;
     this.pos.x = Math.floor(this.arena.width / 2) - Math.floor(this.matrix[0].length / 2);
     return !this.arena.collides(this.matrix, this.pos);
@@ -53,7 +61,24 @@ export class Player {
     return false;
   }
 
+  hardDrop() {
+    while (!this.arena.collides(this.matrix, { x: this.pos.x, y: this.pos.y + 1 })) {
+      this.pos.y++;
+    }
+    this.arena.merge(this.matrix, this.pos);
+    const lines = this.arena.sweep();
+    this._addScore(lines);
+    return true;
+  }
+
+  _randomPiece() {
+    const types = Object.keys(PIECES);
+    const type = types[Math.floor(Math.random() * types.length)];
+    return PIECES[type].map(row => [...row]);
+  }
+
   _addScore(lines) {
+    this.totalLines += lines;
     let multiplier = 1;
     for (let i = 0; i < lines; i++) {
       this.score += multiplier * 10;

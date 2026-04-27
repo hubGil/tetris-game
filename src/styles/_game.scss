@@ -4,9 +4,10 @@ h1 {
   letter-spacing: 4px;
 }
 
-#score {
-  font-size: $font-size-lg;
-  min-height: 1.6rem;
+.game-wrapper {
+  display: flex;
+  gap: $spacing-lg;
+  align-items: flex-start;
 }
 
 canvas {
@@ -14,11 +15,36 @@ canvas {
   display: block;
 }
 
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+  min-width: 120px;
+}
+
+.info-block {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  .label {
+    font-size: $font-size-sm;
+    color: $color-muted;
+    letter-spacing: 2px;
+  }
+
+  #score,
+  #level {
+    font-size: $font-size-lg;
+    min-height: 1.6rem;
+  }
+}
+
 #restart {
   background: $bg-surface;
   color: $color-text;
   border: 1px solid $color-border-light;
-  padding: $spacing-sm $spacing-lg * 1;
+  padding: $spacing-sm $spacing-lg;
   font-family: $font-mono;
   font-size: $font-size-base;
   cursor: pointer;

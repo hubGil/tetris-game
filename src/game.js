@@ -1,10 +1,12 @@
 export class Game {
-  constructor({ arena, player, renderer, controls, scoreEl }) {
+  constructor({ arena, player, renderer, previewRenderer, controls, scoreEl, levelEl }) {
     this.arena = arena;
     this.player = player;
     this.renderer = renderer;
+    this.previewRenderer = previewRenderer;
     this.controls = controls;
     this.scoreEl = scoreEl;
+    this.levelEl = levelEl;
 
     this._dropCounter = 0;
     this._dropInterval = 1000;
@@ -20,8 +22,12 @@ export class Game {
     this._gameOver = false;
     this.arena.reset();
     this.player.score = 0;
+    this.player.totalLines = 0;
+    this.player.nextMatrix = null;
     const ok = this.player.reset();
-    this._updateScore();
+    this._dropInterval = 1000;
+    this._updateHUD();
+    this._renderPreview();
     if (!ok) return;
     this._running = true;
     this._lastTime = 0;
@@ -43,6 +49,7 @@ export class Game {
       .on('moveLeft',    () => this.player.move(-1))
       .on('moveRight',   () => this.player.move(1))
       .on('drop',        () => { this._manualDrop(); })
+      .on('hardDrop',    () => { this._doHardDrop(); })
       .on('rotateLeft',  () => this.player.rotate(-1))
       .on('rotateRight', () => this.player.rotate(1))
       .on('pause',       () => this.togglePause());
@@ -53,6 +60,13 @@ export class Game {
     const locked = this.player.drop();
     this._dropCounter = 0;
     if (locked) this._onPieceLocked();
+  }
+
+  _doHardDrop() {
+    if (!this._running) return;
+    this.player.hardDrop();
+    this._dropCounter = 0;
+    this._onPieceLocked();
   }
 
   _loop(time) {
@@ -76,27 +90,42 @@ export class Game {
   }
 
   _onPieceLocked() {
+    // Level increases every 10 lines; speed caps at 100ms
+    this._dropInterval = Math.max(100, 1000 - (this.player.level - 1) * 100);
+
     const ok = this.player.reset();
-    this._updateScore();
+    this._updateHUD();
+    this._renderPreview();
+
     if (!ok) {
       this._triggerGameOver();
       return;
     }
+
     this.renderer.render(this.arena, this.player);
     this._animId = requestAnimationFrame(t => this._loop(t));
+  }
+
+  _renderPreview() {
+    if (this.previewRenderer && this.player.nextMatrix) {
+      this.previewRenderer.renderPreview(this.player.nextMatrix);
+    }
   }
 
   _triggerGameOver() {
     this._running = false;
     this._gameOver = true;
     if (this.scoreEl) {
-      this.scoreEl.textContent = `GAME OVER — Score: ${this.player.score}`;
+      this.scoreEl.textContent = `GAME OVER — ${this.player.score}`;
     }
   }
 
-  _updateScore() {
+  _updateHUD() {
     if (this.scoreEl && !this._gameOver) {
       this.scoreEl.textContent = this.player.score;
+    }
+    if (this.levelEl) {
+      this.levelEl.textContent = this.player.level;
     }
   }
 }

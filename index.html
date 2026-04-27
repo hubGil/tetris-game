@@ -8,11 +8,26 @@
 </head>
 <body>
   <h1>TETRIS Do Nicolas</h1>
-  <div id="score">0</div>
-  <canvas id="tetris" width="240" height="400"></canvas>
-  <button id="restart">RESTART</button>
+  <div class="game-wrapper">
+    <canvas id="tetris" width="240" height="400"></canvas>
+    <aside class="sidebar">
+      <div class="info-block">
+        <span class="label">SCORE</span>
+        <div id="score">0</div>
+      </div>
+      <div class="info-block">
+        <span class="label">LEVEL</span>
+        <div id="level">1</div>
+      </div>
+      <div class="info-block">
+        <span class="label">NEXT</span>
+        <canvas id="preview" width="120" height="120"></canvas>
+      </div>
+      <button id="restart">RESTART</button>
+    </aside>
+  </div>
   <div id="controls">
-    ← → move &nbsp;|&nbsp; ↓ drop &nbsp;|&nbsp; Q/W rotate &nbsp;|&nbsp; P pause
+    ← → move &nbsp;|&nbsp; ↓ drop &nbsp;|&nbsp; Space hard drop &nbsp;|&nbsp; Q/W rotate &nbsp;|&nbsp; P pause
   </div>
   <script type="module" src="./src/index.js"></script>
 </body>
