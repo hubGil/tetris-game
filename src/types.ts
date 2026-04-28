@@ -6,6 +6,7 @@ export type Position = {
 };
 
 export type PieceType = 'T' | 'O' | 'L' | 'J' | 'I' | 'S' | 'Z';
+export type RotationState = 0 | 1 | 2 | 3;
 
 export type ControlAction =
   | 'moveLeft'
@@ -19,7 +20,7 @@ export type ControlAction =
   | 'mute';
 
 export type GameState = 'idle' | 'running' | 'paused' | 'flashing' | 'gameover';
-export type GameMode = 'marathon' | 'sprint' | 'zen';
+export type GameMode = 'marathon' | 'sprint' | 'ultra' | 'zen';
 export type AppTheme = 'neon' | 'sunset';
 
 export type ScoreEntry = {
@@ -49,6 +50,34 @@ export type PlayerEvents = {
   'lines:cleared': [lines: number];
 };
 
+export type LastClearKind =
+  | 'none'
+  | 'single'
+  | 'double'
+  | 'triple'
+  | 'tetris'
+  | 'tspin';
+
+export type LockResult = {
+  pendingRows: number[];
+};
+
+export type ClearResult = {
+  lines: number;
+  scoreDelta: number;
+  combo: number;
+  isBackToBack: boolean;
+  isTSpin: boolean;
+  clearKind: LastClearKind;
+};
+
+export type SessionStats = {
+  mode: GameMode;
+  elapsedMs: number;
+  remainingMs: number | null;
+  totalLines: number;
+};
+
 export type GameEvents = {
   gameover: [
     {
@@ -61,4 +90,5 @@ export type GameEvents = {
   ];
   'state:changed': [state: GameState];
   'mode:changed': [mode: GameMode];
+  'session:changed': [stats: SessionStats];
 };

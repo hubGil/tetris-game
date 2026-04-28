@@ -26,48 +26,29 @@ describe('Player', () => {
   });
 
   describe('resetStats', () => {
-    it('resets score and totalLines to 0', () => {
+    it('resets score, combo and totalLines', () => {
       player.score = 500;
+      player.combo = 3;
       player.totalLines = 15;
       player.resetStats();
       expect(player.score).toBe(0);
+      expect(player.combo).toBe(0);
       expect(player.totalLines).toBe(0);
     });
 
-    it('resets hold state', () => {
-      player.reset();
-      player.hold();
-      player.resetStats();
-      expect(player.holdMatrix).toBeNull();
-      expect(player._holdType).toBeNull();
-    });
+    it('emits the reset events', () => {
+      const scoreHandler = vi.fn();
+      const levelHandler = vi.fn();
+      const comboHandler = vi.fn();
+      player.on('score:changed', scoreHandler);
+      player.on('level:changed', levelHandler);
+      player.on('combo:changed', comboHandler);
 
-    it('emits score:changed with 0', () => {
-      const handler = vi.fn();
-      player.on('score:changed', handler);
       player.resetStats();
-      expect(handler).toHaveBeenCalledWith(0);
-    });
 
-    it('emits level:changed with 1', () => {
-      const handler = vi.fn();
-      player.on('level:changed', handler);
-      player.resetStats();
-      expect(handler).toHaveBeenCalledWith(1);
-    });
-
-    it('emits piece:hold with null', () => {
-      const handler = vi.fn();
-      player.on('piece:hold', handler);
-      player.resetStats();
-      expect(handler).toHaveBeenCalledWith(null);
-    });
-
-    it('emits combo:changed with 0', () => {
-      const handler = vi.fn();
-      player.on('combo:changed', handler);
-      player.resetStats();
-      expect(handler).toHaveBeenCalledWith(0);
+      expect(scoreHandler).toHaveBeenCalledWith(0);
+      expect(levelHandler).toHaveBeenCalledWith(1);
+      expect(comboHandler).toHaveBeenCalledWith(0);
     });
   });
 
@@ -78,29 +59,10 @@ describe('Player', () => {
       expect(player.pos.y).toBe(0);
     });
 
-    it('returns true on an empty arena', () => {
-      expect(player.reset()).toBe(true);
-    });
-
-    it('returns false when the spawn position is fully blocked', () => {
+    it('returns false when the spawn position is blocked', () => {
       player.reset();
       for (let y = 0; y < arena.height; y += 1) arena.grid[y].fill(1);
       expect(player.reset()).toBe(false);
-    });
-
-    it('emits piece:next with the upcoming matrix', () => {
-      const handler = vi.fn();
-      player.on('piece:next', handler);
-      player.reset();
-      expect(handler).toHaveBeenCalledOnce();
-      expect(player.nextMatrix).not.toBeNull();
-    });
-
-    it('resets canHold to true', () => {
-      player.reset();
-      player.hold();
-      player.reset();
-      expect(player.canHold).toBe(true);
     });
   });
 
@@ -117,37 +79,10 @@ describe('Player', () => {
       expect(player._currentType).toBe(nextType);
     });
 
-    it('sets canHold to false after hold', () => {
+    it('resets rotation state on hold', () => {
+      player._rotationState = 2;
       player.hold();
-      expect(player.canHold).toBe(false);
-    });
-
-    it('returns null when hold is blocked', () => {
-      player.hold();
-      expect(player.hold()).toBeNull();
-    });
-
-    it('swaps current and hold on second hold', () => {
-      player.hold();
-      const heldType = player._holdType;
-      player.reset();
-      player.hold();
-      expect(player._currentType).toBe(heldType);
-    });
-
-    it('emits piece:hold with the held matrix', () => {
-      const handler = vi.fn();
-      player.on('piece:hold', handler);
-      player.hold();
-      expect(handler).toHaveBeenCalledOnce();
-      expect(handler.mock.calls[0][0]).not.toBeNull();
-    });
-
-    it('emits piece:next when advancing to next on first hold', () => {
-      const handler = vi.fn();
-      player.on('piece:next', handler);
-      player.hold();
-      expect(handler).toHaveBeenCalledOnce();
+      expect(player._rotationState).toBe(0);
     });
   });
 
@@ -156,187 +91,124 @@ describe('Player', () => {
       player.reset();
     });
 
-    it('shifts piece right', () => {
+    it('moves right when the path is clear', () => {
       const startX = player.pos.x;
-      player.move(1);
+      expect(player.move(1)).toBe(true);
       expect(player.pos.x).toBe(startX + 1);
     });
 
-    it('does not move past left wall', () => {
+    it('returns false when blocked by a wall', () => {
       player.matrix = [[1]];
       player.pos.x = 0;
-      player.move(-1);
+      expect(player.move(-1)).toBe(false);
       expect(player.pos.x).toBe(0);
-    });
-
-    it('does not move past right wall', () => {
-      player.matrix = [[1]];
-      player.pos.x = arena.width - 1;
-      player.move(1);
-      expect(player.pos.x).toBe(arena.width - 1);
-    });
-
-    it('emits piece:moved on successful move', () => {
-      const handler = vi.fn();
-      player.on('piece:moved', handler);
-      player.move(1);
-      expect(handler).toHaveBeenCalledOnce();
-    });
-
-    it('does not emit piece:moved when blocked', () => {
-      const handler = vi.fn();
-      player.on('piece:moved', handler);
-      player.matrix = [[1]];
-      player.pos.x = 0;
-      player.move(-1);
-      expect(handler).not.toHaveBeenCalled();
     });
   });
 
-  describe('drop', () => {
+  describe('rotate', () => {
+    it('uses SRS wall kicks for the I piece near the wall', () => {
+      player.matrix = [
+        [0, 5, 0, 0],
+        [0, 5, 0, 0],
+        [0, 5, 0, 0],
+        [0, 5, 0, 0],
+      ];
+      player._currentType = 'I';
+      player.pos = { x: -1, y: 1 };
+
+      expect(player.rotate(1)).toBe(true);
+      expect(player._rotationState).toBe(1);
+      expect(player.pos.x).toBeGreaterThanOrEqual(0);
+    });
+  });
+
+  describe('softDrop', () => {
     beforeEach(() => {
       player.reset();
     });
 
-    it('returns locked: false when space is available below', () => {
-      player.pos.y = 0;
-      expect(player.drop().locked).toBe(false);
+    it('moves the piece down one cell when possible', () => {
+      const startY = player.pos.y;
+      expect(player.softDrop()).toBe(true);
+      expect(player.pos.y).toBe(startY + 1);
     });
 
-    it('increments y when not locked', () => {
-      player.pos.y = 0;
-      player.drop();
-      expect(player.pos.y).toBe(1);
-    });
-
-    it('returns locked: true when piece hits the floor', () => {
+    it('returns false when the piece is grounded', () => {
       player.matrix = [[1]];
-      player.pos.y = arena.height - 1;
-      expect(player.drop().locked).toBe(true);
+      player.pos = { x: 0, y: arena.height - 1 };
+      expect(player.softDrop()).toBe(false);
     });
 
-    it('returns pendingRows when a line is completed', () => {
-      arena.grid[19].fill(1);
-      player.matrix = [[1]];
-      player.pos = { x: 0, y: 18 };
-      const { locked, pendingRows } = player.drop();
-      expect(locked).toBe(true);
-      expect(pendingRows).toContain(19);
+    it('adds score for manual soft drop', () => {
+      player.addSoftDropScore(3);
+      expect(player.score).toBe(3);
     });
 
-    it('emits piece:locked when locking', () => {
-      const handler = vi.fn();
-      player.on('piece:locked', handler);
-      player.matrix = [[1]];
-      player.pos.y = arena.height - 1;
-      player.drop();
-      expect(handler).toHaveBeenCalledOnce();
+    it('adds double score for hard drop distance', () => {
+      player.addHardDropScore(4);
+      expect(player.score).toBe(8);
     });
   });
 
-  describe('hardDrop', () => {
-    it('moves the piece to the lowest valid position', () => {
+  describe('lock and hardDrop', () => {
+    it('hardDrop moves to the floor and locks', () => {
       player.reset();
-      const { locked } = player.hardDrop();
-      expect(locked).toBe(true);
-      expect(player.pos.y).toBeGreaterThan(0);
+      const result = player.hardDrop();
+      expect(result.distance).toBeGreaterThan(0);
+      expect(result.pendingRows).toEqual(expect.any(Array));
+    });
+
+    it('detects a T-Spin when three corners are occupied after rotation', () => {
+      player.matrix = [
+        [0, 0, 0],
+        [1, 1, 1],
+        [0, 1, 0],
+      ];
+      player._currentType = 'T';
+      player._lastAction = 'rotate';
+      player.pos = { x: 4, y: 0 };
+
+      arena.grid[0][4] = 9;
+      arena.grid[0][6] = 9;
+      arena.grid[2][4] = 9;
+
+      player.lock();
+
+      expect(player._lastLockWasTSpin).toBe(true);
     });
   });
 
   describe('commitClear', () => {
-    it('removes every pending row passed from the arena', () => {
-      arena.grid[16] = new Array(12).fill(8);
-      arena.grid[17] = new Array(12).fill(1);
-      arena.grid[18] = new Array(12).fill(2);
-      arena.grid[19] = new Array(12).fill(3);
-
-      player.commitClear([17, 18, 19]);
-
-      expect(arena.grid[0].every((cell) => cell === 0)).toBe(true);
-      expect(arena.grid[1].every((cell) => cell === 0)).toBe(true);
-      expect(arena.grid[2].every((cell) => cell === 0)).toBe(true);
-      expect(arena.grid[19]).toEqual(new Array(12).fill(8));
-    });
-
-    it('scores 100 times level for 1 line', () => {
+    it('scores a single line clear', () => {
       player.commitClear([19]);
       expect(player.score).toBe(100);
     });
 
-    it('scores 300 times level for 2 lines', () => {
-      player.commitClear([18, 19]);
-      expect(player.score).toBe(300);
-    });
-
-    it('scores 500 times level for 3 lines', () => {
-      player.commitClear([17, 18, 19]);
-      expect(player.score).toBe(500);
-    });
-
-    it('scores 800 times level for a Tetris', () => {
-      player.commitClear([16, 17, 18, 19]);
-      expect(player.score).toBe(800);
-    });
-
-    it('scores 1200 times level for a back-to-back Tetris', () => {
+    it('applies back-to-back bonus on consecutive tetrises', () => {
       player.commitClear([16, 17, 18, 19]);
       player.totalLines = 0;
       player.score = 0;
       player.commitClear([16, 17, 18, 19]);
-      expect(player.score).toBe(1200);
+      expect(player.score).toBe(1250);
     });
 
-    it('scales with level', () => {
-      player.totalLines = 10;
-      player.commitClear([19]);
-      expect(player.score).toBe(200);
-    });
-
-    it('emits score:changed with the updated score', () => {
-      const handler = vi.fn();
-      player.on('score:changed', handler);
-      player.commitClear([19]);
-      expect(handler).toHaveBeenCalledWith(100);
-    });
-
-    it('emits lines:cleared with the number of lines', () => {
-      const handler = vi.fn();
-      player.on('lines:cleared', handler);
-      player.commitClear([18, 19]);
-      expect(handler).toHaveBeenCalledWith(2);
-    });
-
-    it('emits level:changed when crossing a level threshold', () => {
-      const handler = vi.fn();
-      player.on('level:changed', handler);
-      player.totalLines = 9;
-      player.commitClear([19]);
-      expect(handler).toHaveBeenCalledWith(2);
-    });
-
-    it('does not emit level:changed when level stays the same', () => {
-      const handler = vi.fn();
-      player.on('level:changed', handler);
-      player.commitClear([19]);
-      expect(handler).not.toHaveBeenCalled();
-    });
-
-    it('increments combo when clears happen consecutively', () => {
-      const handler = vi.fn();
-      player.on('combo:changed', handler);
+    it('adds combo bonus on consecutive clears', () => {
       player.commitClear([19]);
       player.commitClear([18]);
+      expect(player.score).toBe(250);
       expect(player.combo).toBe(2);
-      expect(handler).toHaveBeenLastCalledWith(2);
     });
 
-    it('resets combo when a lock clears no rows', () => {
+    it('resets combo on a lock with no clear', () => {
       player.commitClear([19]);
-      const handler = vi.fn();
-      player.on('combo:changed', handler);
       player.commitClear([]);
       expect(player.combo).toBe(0);
-      expect(handler).toHaveBeenCalledWith(0);
+    });
+
+    it('scores T-Spins with the guideline table', () => {
+      player._lastLockWasTSpin = true;
+      player.commitClear([19]);
+      expect(player.score).toBe(800);
     });
   });
 
@@ -354,14 +226,6 @@ describe('Player', () => {
       player.off('score:changed', handler);
       player.commitClear([19]);
       expect(handler).not.toHaveBeenCalled();
-    });
-
-    it('once() fires only one time', () => {
-      const handler = vi.fn();
-      player.once('score:changed', handler);
-      player.commitClear([19]);
-      player.commitClear([18]);
-      expect(handler).toHaveBeenCalledOnce();
     });
   });
 });

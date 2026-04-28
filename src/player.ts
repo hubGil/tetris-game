@@ -1,10 +1,27 @@
 import { PieceBag } from '@/bag.js';
 import { EventEmitter } from '@/event-emitter.js';
 import { clonePiece, PIECES } from '@/pieces.js';
+import {
+  getKickOffsets,
+  nextRotationState,
+  rotateMatrix,
+} from '@/rotation-system.js';
 import type { Arena } from '@/arena.js';
-import type { Matrix, PieceType, PlayerEvents } from '@/types.js';
+import type {
+  ClearResult,
+  LastClearKind,
+  LockResult,
+  Matrix,
+  PieceType,
+  PlayerEvents,
+  RotationState,
+} from '@/types.js';
 
 const BASE_SCORES = [0, 100, 300, 500, 800];
+const TSPIN_SCORES = [400, 800, 1200, 1600];
+const COMBO_BONUS = 50;
+
+type LastAction = 'spawn' | 'move' | 'rotate' | 'drop' | 'hold' | 'none';
 
 export class Player extends EventEmitter<PlayerEvents> {
   readonly arena: Arena;
@@ -21,7 +38,10 @@ export class Player extends EventEmitter<PlayerEvents> {
   _currentType: PieceType | null = null;
   _nextType: PieceType | null = null;
   _holdType: PieceType | null = null;
-  _lastClearTetris = false;
+  _rotationState: RotationState = 0;
+  _lastAction: LastAction = 'none';
+  _lastLockWasTSpin = false;
+  _backToBackActive = false;
 
   constructor(arena: Arena) {
     super();
@@ -43,7 +63,10 @@ export class Player extends EventEmitter<PlayerEvents> {
     this._currentType = null;
     this._nextType = null;
     this._holdType = null;
-    this._lastClearTetris = false;
+    this._rotationState = 0;
+    this._lastAction = 'none';
+    this._lastLockWasTSpin = false;
+    this._backToBackActive = false;
     this.emit('score:changed', 0);
     this.emit('level:changed', 1);
     this.emit('combo:changed', 0);
@@ -57,6 +80,9 @@ export class Player extends EventEmitter<PlayerEvents> {
     const currentType = this._nextType;
     this._currentType = currentType;
     this.matrix = clonePiece(currentType);
+    this._rotationState = 0;
+    this._lastAction = 'spawn';
+    this._lastLockWasTSpin = false;
 
     this._nextType = this._bag.next();
     this.nextMatrix = clonePiece(this._nextType);
@@ -83,6 +109,8 @@ export class Player extends EventEmitter<PlayerEvents> {
       this.matrix = clonePiece(this._currentType);
     }
 
+    this._rotationState = 0;
+    this._lastAction = 'hold';
     this.pos.y = 0;
     this.pos.x =
       Math.floor(this.arena.width / 2) - Math.floor(this.matrix[0].length / 2);
@@ -93,113 +121,220 @@ export class Player extends EventEmitter<PlayerEvents> {
     return !this.arena.collides(this.matrix, this.pos);
   }
 
-  move(dir: number): void {
-    if (!this.matrix) return;
+  move(dir: number): boolean {
+    if (!this.matrix) return false;
 
     this.pos.x += dir;
     if (this.arena.collides(this.matrix, this.pos)) {
       this.pos.x -= dir;
-      return;
+      return false;
     }
 
+    this._lastAction = 'move';
     this.emit('piece:moved');
+    return true;
   }
 
-  rotate(dir: number): void {
-    if (!this.matrix) return;
+  rotate(dir: number): boolean {
+    if (!this.matrix || !this._currentType) return false;
 
-    const savedX = this.pos.x;
-    this._rotateMatrix(this.matrix, dir);
-    let offset = 1;
+    const rotated = rotateMatrix(this.matrix, dir);
+    const from = this._rotationState;
+    const to = nextRotationState(from, dir);
+    const kickOffsets = getKickOffsets(this._currentType, from, to);
 
-    while (this.arena.collides(this.matrix, this.pos)) {
-      this.pos.x += offset;
-      offset = -(offset + (offset > 0 ? 1 : -1));
+    for (const [dx, dy] of kickOffsets) {
+      const nextPos = {
+        x: this.pos.x + dx,
+        y: this.pos.y + dy,
+      };
 
-      if (Math.abs(offset) > this.matrix[0].length) {
-        this._rotateMatrix(this.matrix, -dir);
-        this.pos.x = savedX;
-        return;
-      }
+      if (this.arena.collides(rotated, nextPos)) continue;
+
+      this.matrix = rotated;
+      this.pos = nextPos;
+      this._rotationState = to;
+      this._lastAction = 'rotate';
+      this.emit('piece:rotated');
+      return true;
     }
 
-    this.emit('piece:rotated');
+    return false;
   }
 
-  drop(): { locked: boolean; pendingRows: number[] } {
-    if (!this.matrix) return { locked: false, pendingRows: [] };
+  softDrop(): boolean {
+    if (!this.matrix) return false;
 
-    this.pos.y += 1;
-    if (!this.arena.collides(this.matrix, this.pos)) {
-      return { locked: false, pendingRows: [] };
+    const nextPos = { x: this.pos.x, y: this.pos.y + 1 };
+    if (this.arena.collides(this.matrix, nextPos)) return false;
+
+    this.pos = nextPos;
+    this._lastAction = 'drop';
+    return true;
+  }
+
+  hardDrop(): LockResult & { distance: number } {
+    if (!this.matrix) return { pendingRows: [], distance: 0 };
+
+    let distance = 0;
+    while (this.softDrop()) {
+      distance += 1;
     }
 
-    this.pos.y -= 1;
+    return {
+      ...this.lock(),
+      distance,
+    };
+  }
+
+  lock(): LockResult {
+    if (!this.matrix) return { pendingRows: [] };
+
+    this._lastLockWasTSpin = this._detectTSpin();
     this.arena.merge(this.matrix, this.pos);
     const pendingRows = this.arena.findCompleteRows();
+    this._lastAction = 'none';
     this.emit('piece:locked', { pendingRows });
-    return { locked: true, pendingRows };
+    return { pendingRows };
   }
 
-  hardDrop(): { locked: true; pendingRows: number[] } {
-    if (!this.matrix) return { locked: true, pendingRows: [] };
+  isGrounded(): boolean {
+    if (!this.matrix) return false;
 
-    while (
-      !this.arena.collides(this.matrix, { x: this.pos.x, y: this.pos.y + 1 })
-    ) {
-      this.pos.y += 1;
-    }
-
-    this.arena.merge(this.matrix, this.pos);
-    const pendingRows = this.arena.findCompleteRows();
-    this.emit('piece:locked', { pendingRows });
-    return { locked: true, pendingRows };
+    return this.arena.collides(this.matrix, {
+      x: this.pos.x,
+      y: this.pos.y + 1,
+    });
   }
 
-  commitClear(pendingRows: number[]): void {
+  addSoftDropScore(cells = 1): void {
+    if (cells <= 0) return;
+
+    this.score += cells;
+    this.emit('score:changed', this.score);
+  }
+
+  addHardDropScore(cells = 1): void {
+    if (cells <= 0) return;
+
+    this.score += cells * 2;
+    this.emit('score:changed', this.score);
+  }
+
+  commitClear(pendingRows: number[]): ClearResult {
     const lines = this.arena.clearRows(pendingRows);
-    this._addScore(lines);
+    return this._addScore(lines);
   }
 
-  private _addScore(lines: number): void {
+  private _addScore(lines: number): ClearResult {
+    const prevLevel = this.level;
+    const isTSpin = this._lastLockWasTSpin;
+    const clearKind = this._getClearKind(lines, isTSpin);
+    const difficultClear = lines > 0 && (isTSpin || lines === 4);
+    const isBackToBack = difficultClear && this._backToBackActive;
+    let scoreDelta = 0;
+
     if (lines === 0) {
-      this._lastClearTetris = false;
+      if (isTSpin) {
+        scoreDelta += TSPIN_SCORES[0] * this.level;
+      }
+
       if (this.combo !== 0) {
         this.combo = 0;
         this.emit('combo:changed', 0);
       }
-      return;
+
+      if (scoreDelta > 0) {
+        this.score += scoreDelta;
+        this.emit('score:changed', this.score);
+      }
+
+      return {
+        lines,
+        scoreDelta,
+        combo: this.combo,
+        isBackToBack: false,
+        isTSpin,
+        clearKind,
+      };
     }
 
-    const prevLevel = this.level;
     this.totalLines += lines;
     this.combo += 1;
 
-    const isTetris = lines >= 4;
-    const multiplier = isTetris && this._lastClearTetris ? 1.5 : 1;
-    this.score += Math.floor(
-      BASE_SCORES[Math.min(lines, 4)] * this.level * multiplier,
-    );
-    this._lastClearTetris = isTetris;
+    if (isTSpin) {
+      scoreDelta += TSPIN_SCORES[Math.min(lines, 3)] * this.level;
+    } else {
+      scoreDelta += BASE_SCORES[Math.min(lines, 4)] * this.level;
+    }
+
+    if (isBackToBack) {
+      scoreDelta = Math.floor(scoreDelta * 1.5);
+    }
+
+    if (this.combo > 1) {
+      scoreDelta += (this.combo - 1) * COMBO_BONUS * this.level;
+    }
+
+    this.score += scoreDelta;
+
+    if (difficultClear) {
+      this._backToBackActive = true;
+    } else {
+      this._backToBackActive = false;
+    }
 
     this.emit('score:changed', this.score);
     this.emit('combo:changed', this.combo);
     this.emit('lines:cleared', lines);
     if (this.level !== prevLevel) this.emit('level:changed', this.level);
+
+    return {
+      lines,
+      scoreDelta,
+      combo: this.combo,
+      isBackToBack,
+      isTSpin,
+      clearKind,
+    };
   }
 
-  private _rotateMatrix(matrix: Matrix, dir: number): void {
-    for (let y = 0; y < matrix.length; y += 1) {
-      for (let x = 0; x < y; x += 1) {
-        [matrix[x][y], matrix[y][x]] = [matrix[y][x], matrix[x][y]];
+  private _getClearKind(lines: number, isTSpin: boolean): LastClearKind {
+    if (isTSpin) return 'tspin';
+    if (lines === 4) return 'tetris';
+    if (lines === 3) return 'triple';
+    if (lines === 2) return 'double';
+    if (lines === 1) return 'single';
+    return 'none';
+  }
+
+  private _detectTSpin(): boolean {
+    if (this._currentType !== 'T' || this._lastAction !== 'rotate') {
+      return false;
+    }
+
+    const centerX = this.pos.x + 1;
+    const centerY = this.pos.y + 1;
+    const corners = [
+      { x: centerX - 1, y: centerY - 1 },
+      { x: centerX + 1, y: centerY - 1 },
+      { x: centerX - 1, y: centerY + 1 },
+      { x: centerX + 1, y: centerY + 1 },
+    ];
+
+    let occupiedCorners = 0;
+    corners.forEach(({ x, y }) => {
+      if (
+        x < 0 ||
+        x >= this.arena.width ||
+        y < 0 ||
+        y >= this.arena.height ||
+        this.arena.grid[y][x] !== 0
+      ) {
+        occupiedCorners += 1;
       }
-    }
+    });
 
-    if (dir > 0) {
-      matrix.forEach((row) => row.reverse());
-      return;
-    }
-
-    matrix.reverse();
+    return occupiedCorners >= 3;
   }
 }

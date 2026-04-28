@@ -13,6 +13,7 @@ import type {
   ControlAction,
   GameMode,
   GameState,
+  SessionStats,
 } from '@/types.js';
 
 const ACTION_LABELS: Record<ControlAction, string> = {
@@ -58,6 +59,13 @@ function formatKey(code: string): string {
   return code;
 }
 
+function formatDuration(ms: number): string {
+  const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+}
+
 const canvas = getRequiredElement<HTMLCanvasElement>('tetris');
 const previewCanvas = getRequiredElement<HTMLCanvasElement>('preview');
 const holdCanvas = getRequiredElement<HTMLCanvasElement>('hold');
@@ -71,6 +79,18 @@ const levelSplashEl = getRequiredElement<HTMLElement>('level-splash');
 const modeBadgeEl = getRequiredElement<HTMLElement>('mode-badge');
 const modeTitleEl = getRequiredElement<HTMLElement>('mode-title');
 const modeDescriptionEl = getRequiredElement<HTMLElement>('mode-description');
+const sessionPrimaryLabelEl = getRequiredElement<HTMLElement>(
+  'session-primary-label',
+);
+const sessionPrimaryValueEl = getRequiredElement<HTMLElement>(
+  'session-primary-value',
+);
+const sessionSecondaryLabelEl = getRequiredElement<HTMLElement>(
+  'session-secondary-label',
+);
+const sessionSecondaryValueEl = getRequiredElement<HTMLElement>(
+  'session-secondary-value',
+);
 const controlsListEl = getRequiredElement<HTMLUListElement>('controls-list');
 const overlayEl = getRequiredElement<HTMLElement>('game-over');
 const gameFrameEl = getRequiredElement<HTMLElement>('game-frame');
@@ -161,6 +181,40 @@ function updateModeUI(mode: GameMode): void {
   modeCards.forEach((card) => {
     card.classList.toggle('active', card.dataset.modeCard === mode);
   });
+
+  if (mode === 'ultra') {
+    sessionPrimaryLabelEl.textContent = 'score race';
+    sessionSecondaryLabelEl.textContent = 'restante';
+    return;
+  }
+
+  if (mode === 'sprint') {
+    sessionPrimaryLabelEl.textContent = 'linhas';
+    sessionSecondaryLabelEl.textContent = 'meta';
+    return;
+  }
+
+  sessionPrimaryLabelEl.textContent = 'linhas';
+  sessionSecondaryLabelEl.textContent = 'tempo';
+}
+
+function updateSessionUI(stats: SessionStats): void {
+  if (stats.mode === 'ultra') {
+    sessionPrimaryValueEl.textContent = String(player.score);
+    sessionSecondaryValueEl.textContent = formatDuration(
+      stats.remainingMs ?? 0,
+    );
+    return;
+  }
+
+  sessionPrimaryValueEl.textContent = String(stats.totalLines);
+
+  if (stats.mode === 'sprint') {
+    sessionSecondaryValueEl.textContent = `${stats.totalLines}/40`;
+    return;
+  }
+
+  sessionSecondaryValueEl.textContent = formatDuration(stats.elapsedMs);
 }
 
 function renderBindings(): void {
@@ -341,6 +395,9 @@ game
   })
   .on('mode:changed', (mode) => {
     updateModeUI(mode);
+  })
+  .on('session:changed', (stats) => {
+    updateSessionUI(stats);
   });
 
 controls.on('mute', () => {
@@ -374,6 +431,12 @@ modeCards.forEach((card) => {
   card.addEventListener('click', () => {
     const mode = card.dataset.modeCard as GameMode;
     updateModeUI(mode);
+    updateSessionUI({
+      mode,
+      elapsedMs: 0,
+      remainingMs: GAME_MODES[mode].durationMs ?? null,
+      totalLines: 0,
+    });
   });
 });
 
@@ -423,6 +486,12 @@ applyTheme(settings.theme);
 syncSettingsUI();
 updateMuteButton();
 updateModeUI(selectedMode);
+updateSessionUI({
+  mode: selectedMode,
+  elapsedMs: 0,
+  remainingMs: null,
+  totalLines: 0,
+});
 updateStateUI('idle');
 comboValueEl.textContent = 'x0';
 registerServiceWorker();

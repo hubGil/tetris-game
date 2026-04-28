@@ -194,6 +194,19 @@ canvas#preview {
   gap: $spacing-sm;
 }
 
+.session-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: $spacing-sm;
+}
+
+.session-metrics > div {
+  border: 1px solid var(--border);
+  border-radius: $radius-sm;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 0.9rem;
+}
+
 .session-panel strong {
   display: block;
   margin-top: 0.3rem;
@@ -209,7 +222,7 @@ canvas#preview {
 
 .mode-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: $spacing-md;
   margin-top: $spacing-lg;
 }

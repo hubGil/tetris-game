@@ -17,6 +17,8 @@ describe('Game', () => {
   function createControlsStub() {
     return {
       on: vi.fn().mockReturnThis(),
+      onRelease: vi.fn().mockReturnThis(),
+      isPressed: vi.fn(() => false),
     };
   }
 
@@ -40,7 +42,7 @@ describe('Game', () => {
       scoresEl: null,
     });
 
-    return { arena, player, game };
+    return { arena, player, controls, game };
   }
 
   it('starts in running state after a successful reset', () => {
@@ -68,6 +70,22 @@ describe('Game', () => {
     expect(game.mode).toBe('zen');
   });
 
+  it('emits session stats when a game starts', () => {
+    const { game } = createGame();
+    const handler = vi.fn();
+    game.on('session:changed', handler);
+
+    game.start('ultra');
+
+    expect(handler).toHaveBeenCalledWith(
+      expect.objectContaining({
+        mode: 'ultra',
+        totalLines: 0,
+        remainingMs: 120000,
+      }),
+    );
+  });
+
   it('ends sprint when the line target is reached', () => {
     const { game, player } = createGame();
     const handler = vi.fn();
@@ -77,6 +95,14 @@ describe('Game', () => {
     player.totalLines = 39;
     player.commitClear = vi.fn(() => {
       player.totalLines = 40;
+      return {
+        lines: 1,
+        scoreDelta: 100,
+        combo: 1,
+        isBackToBack: false,
+        isTSpin: false,
+        clearKind: 'single' as const,
+      };
     });
     player.reset = vi.fn(() => true);
 
@@ -89,6 +115,30 @@ describe('Game', () => {
       expect.objectContaining({
         mode: 'sprint',
         title: 'SPRINT COMPLETO',
+      }),
+    );
+  });
+
+  it('ends ultra when the timer expires', () => {
+    const { game } = createGame();
+    const handler = vi.fn();
+    game.on('gameover', handler);
+
+    game.start('ultra');
+    (
+      game as unknown as { _lastTime: number; _loop: (time: number) => void }
+    )._lastTime = 1;
+    (
+      game as unknown as { _elapsedMs: number; _loop: (time: number) => void }
+    )._elapsedMs = 119999;
+
+    (game as unknown as { _loop: (time: number) => void })._loop(2);
+
+    expect(game.state).toBe('gameover');
+    expect(handler).toHaveBeenCalledWith(
+      expect.objectContaining({
+        mode: 'ultra',
+        title: 'ULTRA FINALIZADO',
       }),
     );
   });

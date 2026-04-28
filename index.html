@@ -119,6 +119,16 @@
             <p id="mode-description" class="panel-text">
               ritmo classico com velocidade crescente.
             </p>
+            <div class="session-metrics">
+              <div>
+                <span class="label" id="session-primary-label">linhas</span>
+                <strong id="session-primary-value">0</strong>
+              </div>
+              <div>
+                <span class="label" id="session-secondary-label">tempo</span>
+                <strong id="session-secondary-value">--:--</strong>
+              </div>
+            </div>
             <div class="quick-actions">
               <button id="restart" type="button">restart</button>
               <button id="open-menu" type="button">menu</button>
@@ -164,6 +174,14 @@
             <p class="mode-name">sprint</p>
             <p class="mode-copy">limpe 40 linhas o mais rapido possivel.</p>
             <button data-start-mode="sprint" type="button">jogar sprint</button>
+          </article>
+
+          <article class="mode-card" data-mode-card="ultra">
+            <p class="mode-name">ultra</p>
+            <p class="mode-copy">
+              dois minutos para empilhar o maximo de pontos.
+            </p>
+            <button data-start-mode="ultra" type="button">jogar ultra</button>
           </article>
 
           <article class="mode-card" data-mode-card="zen">

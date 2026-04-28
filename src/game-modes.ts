@@ -7,6 +7,7 @@ export type GameModeConfig = {
   startDropInterval: number;
   minDropInterval: number;
   targetLines?: number;
+  durationMs?: number;
 };
 
 export const GAME_MODES: Record<GameMode, GameModeConfig> = {
@@ -24,6 +25,14 @@ export const GAME_MODES: Record<GameMode, GameModeConfig> = {
     startDropInterval: 850,
     minDropInterval: 180,
     targetLines: 40,
+  },
+  ultra: {
+    id: 'ultra',
+    name: 'Ultra',
+    description: 'Dois minutos para pontuar o maximo possivel.',
+    startDropInterval: 850,
+    minDropInterval: 100,
+    durationMs: 120000,
   },
   zen: {
     id: 'zen',
