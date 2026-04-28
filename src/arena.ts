@@ -16,7 +16,7 @@ export class Arena {
       for (let x = 0; x < matrix[y].length; x += 1) {
         if (
           matrix[y][x] !== 0 &&
-          (this.grid[y + pos.y] && this.grid[y + pos.y][x + pos.x]) !== 0
+          (this.grid[y + pos.y]?.[x + pos.x] ?? 0) !== 0
         ) {
           return true;
         }

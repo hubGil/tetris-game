@@ -379,7 +379,7 @@ export class Game extends EventEmitter<GameEvents> {
     if (targetLines && this.player.totalLines >= targetLines) {
       this._triggerGameOver(
         'SPRINT COMPLETO',
-        `40 linhas em ${this.player.score} pontos`,
+        `40 linhas em ${this._formatElapsed()}`,
       );
       return;
     }
@@ -518,6 +518,13 @@ export class Game extends EventEmitter<GameEvents> {
           : null,
       totalLines: this.player.totalLines,
     };
+  }
+
+  private _formatElapsed(): string {
+    const m = Math.floor(this._elapsedMs / 60000);
+    const s = Math.floor((this._elapsedMs % 60000) / 1000);
+    const ms = this._elapsedMs % 1000;
+    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${String(ms).padStart(3, '0')}`;
   }
 
   private _clearLockDelay(): void {
